@@ -18,7 +18,7 @@ public class Node {
 	private BigInteger predecessor;
 	private BigInteger successor;
 	
-	LinkedHashMap<BigInteger, BigInteger> fingerTable = new LinkedHashMap<BigInteger, BigInteger>();
+	private LinkedHashMap<BigInteger, BigInteger> fingerTable = new LinkedHashMap<BigInteger, BigInteger>();
 
 	public Node() throws UnknownHostException, NoSuchAlgorithmException{
 		
