@@ -17,6 +17,8 @@ public class Node {
 	
 	private BigInteger predecessor;
 	private BigInteger successor;
+	
+	LinkedHashMap<BigInteger, BigInteger> fingerTable = new LinkedHashMap<BigInteger, BigInteger>();
 
 	public Node() throws UnknownHostException, NoSuchAlgorithmException{
 		
@@ -29,7 +31,6 @@ public class Node {
 		
 		m = hash.length * 8;
 		ringDimension = BigInteger.valueOf((long) 2).pow(m);
-		LinkedHashMap<BigInteger, BigInteger> fingerTable = new LinkedHashMap<BigInteger, BigInteger>();
 		
 		for(int i = 0; i < m; i++) {
 			BigInteger entryKey = nodeID.add(BigInteger.valueOf((long) 2).pow(i)).mod(ringDimension);
