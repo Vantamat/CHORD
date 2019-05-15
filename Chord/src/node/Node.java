@@ -1,7 +1,9 @@
 package node;
 
+import java.io.IOException;
 import java.math.BigInteger;
 import java.net.InetAddress;
+import java.net.Socket;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -18,7 +20,7 @@ public class Node {
 	private BigInteger predecessor;
 	private BigInteger successor;
 	
-	private LinkedHashMap<BigInteger, BigInteger> fingerTable = new LinkedHashMap<BigInteger, BigInteger>();
+	private LinkedHashMap<BigInteger, Node> fingerTable = new LinkedHashMap<BigInteger, Node>();
 
 	public Node() throws UnknownHostException, NoSuchAlgorithmException{
 		
@@ -27,33 +29,57 @@ public class Node {
 		MessageDigest digest = MessageDigest.getInstance("SHA-1");
 		byte[] hash = digest.digest(nodeIP.getBytes(StandardCharsets.UTF_8));
 
-		BigInteger nodeID = new BigInteger(1, hash);
+		nodeID = new BigInteger(1, hash);
 		
 		m = hash.length * 8;
 		ringDimension = BigInteger.valueOf((long) 2).pow(m);
 		
 		for(int i = 0; i < m; i++) {
 			BigInteger entryKey = nodeID.add(BigInteger.valueOf((long) 2).pow(i)).mod(ringDimension);
-			BigInteger entryValue = null;
+			Node entryValue = null;
 			fingerTable.put(entryKey, entryValue);
 		}		
 		System.out.println("nodeIP\t" + nodeIP + "\nm\t" + m + "\nnodeID\t" + nodeID + "\n" + digest.toString());
 	
 		for (BigInteger name: fingerTable.keySet()) {
             System.out.println(name);
-		} 
+		}
 	}
+	
+	private BigInteger findSuccessor(BigInteger ID) {
+		if(ID.compareTo(this.nodeID) == 1 && ID.compareTo(this.successor) != 1)
+			return this.successor;
+		else
+			return closestPrecedingNode(ID).findSuccessor(ID);
+	}
+	
+	private Node closestPrecedingNode(BigInteger ID) {
+		for(int i = m; i > 0; i--) {
+			if(fingerTable.get(i).nodeID.compareTo(this.nodeID) == 1 && fingerTable.get(i).nodeID.compareTo(ID) == -1)
+				return fingerTable.get(i);
+		}
+		return this;
+	}	 
 	
 	public void create() {
 		predecessor = null;
 		successor = this.nodeID;
 	}	
 	
-	private void join() {
-		
+	public void join(Node n) {
+		predecessor = null;
+		successor = n.findSuccessor(this.nodeID);
 	}
 	
-	public static void main (String[] args) throws UnknownHostException, NoSuchAlgorithmException {
-		new Node();
+	
+	
+	public static void main (String[] args) throws NoSuchAlgorithmException, IOException {
+		Node n1 = new Node();
+		//Node n2 = new Node();
+		n1.create();
+		Listener l = new Listener(new Socket(InetAddress.getLocalHost(), 5000));
+		new Thread(l).start();
+		//n2.join(n1);
+		System.out.println(n1.successor);
 	}
 }

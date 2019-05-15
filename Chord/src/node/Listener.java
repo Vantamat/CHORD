@@ -13,6 +13,7 @@ public class Listener implements Runnable{
 	
 	@Override
 	public void run() {
+		System.out.println("ciao");
 		try {
 			String line;
 			Scanner in = new Scanner(socket.getInputStream());
