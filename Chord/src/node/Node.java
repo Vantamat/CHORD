@@ -49,6 +49,10 @@ public class Node {
 		successor = this.nodeID;
 	}	
 	
+	private void join() {
+		
+	}
+	
 	public static void main (String[] args) throws UnknownHostException, NoSuchAlgorithmException {
 		new Node();
 	}
