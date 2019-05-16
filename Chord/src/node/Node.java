@@ -77,7 +77,7 @@ public class Node {
 		Node n1 = new Node();
 		//Node n2 = new Node();
 		n1.create();
-		Listener l = new Listener(new Socket(InetAddress.getLocalHost(), 5000));
+		Listener l = new Listener();//InetAddress.getLocalHost()
 		new Thread(l).start();
 		//n2.join(n1);
 		System.out.println(n1.successor);
