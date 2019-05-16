@@ -17,8 +17,8 @@ public class Node {
 	private int m;
 	private BigInteger ringDimension;
 	
-	private BigInteger predecessor;
-	private BigInteger successor;
+	private Node predecessor;
+	private Node successor;
 	
 	private LinkedHashMap<BigInteger, Node> fingerTable = new LinkedHashMap<BigInteger, Node>();
 
@@ -41,45 +41,97 @@ public class Node {
 		}		
 		System.out.println("nodeIP\t" + nodeIP + "\nm\t" + m + "\nnodeID\t" + nodeID + "\n" + digest.toString());
 	
-		for (BigInteger name: fingerTable.keySet()) {
-            System.out.println(name);
+		for (BigInteger key: fingerTable.keySet()) {
+            System.out.println(key + "\t" + fingerTable.get(key));
 		}
 	}
 	
-	private BigInteger findSuccessor(BigInteger ID) {
-		if(ID.compareTo(this.nodeID) == 1 && ID.compareTo(this.successor) != 1)
+	private Node findSuccessor(BigInteger nodeID) {
+		if(nodeID.compareTo(this.nodeID) == 1 && nodeID.compareTo(this.successor.getNodeID()) != 1)
 			return this.successor;
 		else
-			return closestPrecedingNode(ID).findSuccessor(ID);
+			return closestPrecedingNode(nodeID).findSuccessor(nodeID);
 	}
 	
-	private Node closestPrecedingNode(BigInteger ID) {
+	private Node closestPrecedingNode(BigInteger nodeID) {
 		for(int i = m; i > 0; i--) {
-			if(fingerTable.get(i).nodeID.compareTo(this.nodeID) == 1 && fingerTable.get(i).nodeID.compareTo(ID) == -1)
+			if(fingerTable.get(i).nodeID.compareTo(this.nodeID) == 1 && fingerTable.get(i).nodeID.compareTo(nodeID) == -1)
 				return fingerTable.get(i);
 		}
 		return this;
 	}	 
 	
 	public void create() {
-		predecessor = null;
-		successor = this.nodeID;
+		this.predecessor = null;
+		this.successor = this;
 	}	
 	
 	public void join(Node n) {
-		predecessor = null;
-		successor = n.findSuccessor(this.nodeID);
+		this.predecessor = null;
+		this.successor = n.findSuccessor(this.nodeID);
 	}
 	
+	public void stabilize() {
+		Node node = successor.getPredecessor().getSuccessor();
+		if(node.getNodeID().compareTo(this.nodeID) == 1 && node.getNodeID().compareTo(this.nodeID) == -1)
+			this.successor = node;
+		this.successor.notify(this);
+		
+	}
+
+	public void notify(Node node) {
+		if(this.predecessor == null || (node.getNodeID().compareTo(this.predecessor.getNodeID()) == 1 && node.getNodeID().compareTo(this.nodeID) == -1))
+			this.predecessor = node;
+	}
 	
+	public void fixFingers() {
+		
+	}
 	
+	public void checkPredecessor() {
+		if(false/*TO ADD predecessor has failed*/)
+			this.predecessor = null;
+	}
+	
+	public String getNodeIP() {
+		return nodeIP;
+	}
+
+	public void setNodeIP(String nodeIP) {
+		this.nodeIP = nodeIP;
+	}
+
+	public BigInteger getNodeID() {
+		return nodeID;
+	}
+
+	public void setNodeID(BigInteger nodeID) {
+		this.nodeID = nodeID;
+	}
+
+	public Node getPredecessor() {
+		return predecessor;
+	}
+
+	public void setPredecessor(Node predecessor) {
+		this.predecessor = predecessor;
+	}
+
+	public Node getSuccessor() {
+		return successor;
+	}
+
+	public void setSuccessor(Node successor) {
+		this.successor = successor;
+	}
+
 	public static void main (String[] args) throws NoSuchAlgorithmException, IOException {
 		Node n1 = new Node();
 		//Node n2 = new Node();
 		n1.create();
-		Listener l = new Listener();//InetAddress.getLocalHost()
-		new Thread(l).start();
+		//Listener l = new Listener();//InetAddress.getLocalHost()
+		//new Thread(l).start();
 		//n2.join(n1);
-		System.out.println(n1.successor);
+		System.out.println(n1.successor.getNodeID());
 	}
 }
