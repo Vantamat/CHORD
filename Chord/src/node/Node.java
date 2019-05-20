@@ -47,10 +47,12 @@ public class Node {
 	}
 	
 	private Node findSuccessor(BigInteger nodeID) {
+		if(this.nodeID.compareTo(this.successor.getNodeID()) == -1)
+			if((nodeID.compareTo(this.nodeID) == 1 && nodeID.compareTo(ringDimension) == -1) || (nodeID.compareTo(BigInteger.valueOf((long) 0)) != -1 && nodeID.compareTo(this.successor.getNodeID()) != 1))
+				return this.successor;
 		if(nodeID.compareTo(this.nodeID) == 1 && nodeID.compareTo(this.successor.getNodeID()) != 1)
 			return this.successor;
-		else
-			return closestPrecedingNode(nodeID).findSuccessor(nodeID);
+		return closestPrecedingNode(nodeID).findSuccessor(nodeID);
 	}
 	
 	private Node closestPrecedingNode(BigInteger nodeID) {
@@ -88,8 +90,8 @@ public class Node {
 		
 	}
 	
-	public void checkPredecessor() {
-		if(false/*TO ADD predecessor has failed*/)
+	public void checkPredecessor() throws UnknownHostException, IOException {
+		if(InetAddress.getByName(this.predecessor.getNodeIP()).isReachable(2000))
 			this.predecessor = null;
 	}
 	
