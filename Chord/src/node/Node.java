@@ -3,6 +3,7 @@ package node;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.net.InetAddress;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
@@ -21,8 +22,11 @@ public class Node {
 	private Node successor;
 	
 	private LinkedHashMap<BigInteger, Node> fingerTable = new LinkedHashMap<BigInteger, Node>();
+	
+	private ServerSocket serverSocket;
+	private Listener listener;
 
-	public Node() throws UnknownHostException, NoSuchAlgorithmException{
+	public Node() throws NoSuchAlgorithmException, IOException{
 		
 		nodeIP = InetAddress.getLocalHost().getHostAddress();
 		
@@ -46,6 +50,10 @@ public class Node {
             System.out.println(key + "\t" + fingerTable.get(key));
 		}
 		*/
+		
+		serverSocket = new ServerSocket(2345);
+		listener = new Listener(serverSocket);
+		new Thread(listener).start();
 	}
 	
 	public Node findSuccessor(BigInteger nodeID) {
@@ -78,6 +86,9 @@ public class Node {
 		this.successor = n.findSuccessor(this.nodeID);
 	}
 	
+	public void leave() throws IOException {
+		serverSocket.close();
+	}
 	public void stabilize() {
 		Node node = successor.getPredecessor().getSuccessor();
 		if(this.nodeID.compareTo(this.successor.getNodeID()) == 1)
@@ -150,5 +161,7 @@ public class Node {
 		System.out.println("N1 ID: " + n1.getNodeID() + "\nN1 successor: " + n1.successor.getNodeID() + "\nN1 predecessor: " + n1.predecessor.getNodeID());
 		System.out.println("N2 ID: " + n2.getNodeID() + "\nN2 successor: " + n2.successor.getNodeID() + "\nN2 predecessor: " + n2.predecessor.getNodeID());	
 		n1.stabilize();
+		//n2.join(n1);
+		System.out.println(n1.successor);
 	}
 }
