@@ -1,6 +1,8 @@
 package node;
 
+import java.io.IOException;
 import java.net.Socket;
+import java.util.Scanner;
 
 /**
  * RequestHandler viene generata una volta ricevuta una richiesta di connessione da un nodo della rete. La classe si occupa
@@ -15,10 +17,30 @@ public class RequestsHandler implements Runnable{
 		this.socket = socket;
 	}
 	
+	/**
+	 * in questo run il nodo resterà in ascolto dei messaggi provenienti dal nodo che ha aperto la comunicazione, da quest'ultimo 
+	 * riceverà delle stringhe (enum?) ed in base al loro valore verranno eseguite diverse operazioni
+	 */
 	@Override
 	public void run() {
-		// TODO Auto-generated method stub
-		
+		String line;
+		Scanner in;
+		try {
+			in = new Scanner(socket.getInputStream());
+			line = in.nextLine();
+			
+			switch(line) {
+			case("1"):
+				break;
+			case("2"):
+				break;
+			}
+			
+			in.close();
+			socket.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 }

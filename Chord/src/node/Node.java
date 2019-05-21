@@ -3,6 +3,7 @@ package node;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.net.InetAddress;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
@@ -21,8 +22,11 @@ public class Node {
 	private BigInteger successor;
 	
 	private LinkedHashMap<BigInteger, Node> fingerTable = new LinkedHashMap<BigInteger, Node>();
+	
+	private ServerSocket serverSocket;
+	private Listener listener;
 
-	public Node() throws UnknownHostException, NoSuchAlgorithmException{
+	public Node() throws NoSuchAlgorithmException, IOException{
 		
 		nodeIP = InetAddress.getLocalHost().getHostAddress();
 		
@@ -44,6 +48,10 @@ public class Node {
 		for (BigInteger name: fingerTable.keySet()) {
             System.out.println(name);
 		}
+		
+		serverSocket = new ServerSocket(2345);
+		listener = new Listener(serverSocket);
+		new Thread(listener).start();
 	}
 	
 	private BigInteger findSuccessor(BigInteger ID) {
@@ -71,14 +79,14 @@ public class Node {
 		successor = n.findSuccessor(this.nodeID);
 	}
 	
-	
+	public void leave() throws IOException {
+		serverSocket.close();
+	}
 	
 	public static void main (String[] args) throws NoSuchAlgorithmException, IOException {
 		Node n1 = new Node();
 		//Node n2 = new Node();
 		n1.create();
-		Listener l = new Listener();//InetAddress.getLocalHost()
-		new Thread(l).start();
 		//n2.join(n1);
 		System.out.println(n1.successor);
 	}
