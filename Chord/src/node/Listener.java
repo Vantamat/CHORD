@@ -11,6 +11,10 @@ import java.net.ServerSocket;
 public class Listener implements Runnable{
 	private ServerSocket serverSocket;
 	
+	
+	/**
+	 * @param serverSocket: la serverSocket che sarà utilizzata per essere contattati da altri nodi
+	 */
 	public Listener(ServerSocket serverSocket) {
 		this.serverSocket = serverSocket;
 	}
