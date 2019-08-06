@@ -18,6 +18,8 @@ public class Node {
 	private int m;
 	private BigInteger ringDimension;
 	
+	private MessageDigest digest;
+	
 	private Node predecessor;
 	private Node successor;
 	
@@ -30,7 +32,7 @@ public class Node {
 		
 		nodeIP = InetAddress.getLocalHost().getHostAddress();
 		
-		MessageDigest digest = MessageDigest.getInstance("SHA-1");
+		digest = MessageDigest.getInstance("SHA-1");
 		byte[] hash = digest.digest(nodeIP.getBytes(StandardCharsets.UTF_8));
 
 		nodeID = new BigInteger(1, hash);
@@ -54,9 +56,14 @@ public class Node {
 		serverSocket = new ServerSocket(2345);
 		listener = new Listener(serverSocket);
 		new Thread(listener).start();
+
+		printNodeInformation();
+		
 	}
 	
 	public Node findSuccessor(BigInteger nodeID) {
+		
+	
 		if(this.nodeID.compareTo(this.successor.getNodeID()) == 1)
 			if((nodeID.compareTo(this.nodeID) == 1 && nodeID.compareTo(ringDimension) == -1) || (nodeID.compareTo(BigInteger.valueOf((long) 0)) != -1 && nodeID.compareTo(this.successor.getNodeID()) != 1))
 				return this.successor;
@@ -70,7 +77,7 @@ public class Node {
 			if(this.nodeID.compareTo(this.successor.getNodeID()) == 1)
 				if((fingerTable.get(i).getNodeID().compareTo(this.nodeID) == 1 && fingerTable.get(i).getNodeID().compareTo(ringDimension) == -1) || (fingerTable.get(i).getNodeID().compareTo(BigInteger.valueOf((long) 0)) != -1 && fingerTable.get(i).getNodeID().compareTo(this.successor.getNodeID()) != 1))
 					return fingerTable.get(i);
-			if(fingerTable.get(i).getNodeID().compareTo(this.nodeID) == 1 && fingerTable.get(i).getNodeID().compareTo(nodeID) == -1)
+			if(fingerTable.get(i) != null && fingerTable.get(i).getNodeID().compareTo(this.nodeID) == 1 && fingerTable.get(i).getNodeID().compareTo(nodeID) == -1)
 				return fingerTable.get(i);
 		}
 		return this;
@@ -81,9 +88,9 @@ public class Node {
 		this.successor = this;
 	}	
 	
-	public void join(Node n) {
+	public void join(Node node) {
 		this.predecessor = null;
-		this.successor = n.findSuccessor(this.nodeID);
+		this.successor = node.findSuccessor(this.nodeID);
 	}
 	
 	public void leave() throws IOException {
@@ -96,8 +103,7 @@ public class Node {
 				this.successor = node;
 		if(node.getNodeID().compareTo(this.nodeID) == 1 && node.getNodeID().compareTo(this.successor.getNodeID()) == -1)
 			this.successor = node;
-		this.successor.notify(this);
-		
+		this.successor.notify(this);		
 	}
 
 	public void notify(Node node) {
@@ -115,6 +121,19 @@ public class Node {
 	public void checkPredecessor() throws UnknownHostException, IOException {
 		if(InetAddress.getByName(this.predecessor.getNodeIP()).isReachable(2000))
 			this.predecessor = null;
+	}
+	
+	private void printNodeInformation() {
+		System.out.println("Node IP\t\t" + this.nodeIP + "\nID dimension\t" + this.m + "\nNode ID\t\t" + this.nodeID + "\n" + this.digest.toString());
+		if(this.successor != null)
+			System.out.println("Successor ID\t\t" + this.successor.nodeID);
+		if(this.predecessor != null)
+			System.out.println("Predecessor ID\t\t" + this.predecessor.nodeID);
+		/*
+		for (BigInteger key: fingerTable.keySet()) {
+            System.out.println(key + "\t" + fingerTable.get(key));
+		}
+		*/
 	}
 	
 	public String getNodeIP() {
