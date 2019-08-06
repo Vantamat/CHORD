@@ -15,36 +15,34 @@ public class Node {
 	private String nodeIP;
 	private BigInteger nodeID;
 	private int m;
+	private byte[] hash;
 	private BigInteger ringDimension;
 	
 	private MessageDigest digest;
 	
-	private Node predecessor;
-	private Node successor;
+	private InetAddress address;
+	private InetAddress predecessor;
+	private InetAddress successor;
 	
-	private LinkedHashMap<BigInteger, Node> fingerTable = new LinkedHashMap<BigInteger, Node>();
+	private LinkedHashMap<BigInteger, InetAddress> fingerTable = new LinkedHashMap<BigInteger, InetAddress>();
 	
 	private ServerSocket serverSocket;
 	private Listener listener;
 
-	public Node() throws NoSuchAlgorithmException, IOException{
+	public Node() throws IOException, NoSuchAlgorithmException{
 		
-		nodeIP = InetAddress.getLocalHost().getHostAddress();
-		
-		digest = MessageDigest.getInstance("SHA-1");
-		byte[] hash = digest.digest(nodeIP.getBytes(StandardCharsets.UTF_8));
-
-		nodeID = new BigInteger(1, hash);
-		
-		m = hash.length * 8;
-		ringDimension = BigInteger.valueOf((long) 2).pow(m);
+		this.address = InetAddress.getLocalHost();
+		this.nodeIP = this.address.getHostAddress();
+		this.nodeID = evaluateID(this.nodeIP);
+		this.m = hash.length * 8;
+		this.ringDimension = BigInteger.valueOf((long) 2).pow(m);
 		
 		for(int i = 0; i < m; i++) {
-			BigInteger entryKey = nodeID.add(BigInteger.valueOf((long) 2).pow(i)).mod(ringDimension);
-			Node entryValue = null;
-			fingerTable.put(entryKey, entryValue);
+			BigInteger entryKey = this.nodeID.add(BigInteger.valueOf((long) 2).pow(i)).mod(ringDimension);
+			InetAddress entryValue = null;
+			this.fingerTable.put(entryKey, entryValue);
 		}		
-		System.out.println("nodeIP\t" + nodeIP + "\nm\t" + m + "\nnodeID\t" + nodeID + "\n" + digest.toString());
+		System.out.println("nodeIP\t" + this.nodeIP + "\nm\t" + this.m + "\nnodeID\t" + this.nodeID + "\n" + this.digest.toString());
 	
 		/*
 		for (BigInteger key: fingerTable.keySet()) {
@@ -52,44 +50,51 @@ public class Node {
 		}
 		*/
 		
-		serverSocket = new ServerSocket(2345);
-		listener = new Listener(serverSocket);
-		new Thread(listener).start();
+		this.serverSocket = new ServerSocket(2345);
+		this.listener = new Listener(serverSocket);
+		new Thread(this.listener).start();
 
 		printNodeInformation();
 		
 	}
 	
-	public Node findSuccessor(BigInteger nodeID) {
-		
-	
-		if(this.nodeID.compareTo(this.successor.getNodeID()) == 1)
-			if((nodeID.compareTo(this.nodeID) == 1 && nodeID.compareTo(ringDimension) == -1) || (nodeID.compareTo(BigInteger.valueOf((long) 0)) != -1 && nodeID.compareTo(this.successor.getNodeID()) != 1))
+	public InetAddress findSuccessor(InetAddress node) {
+		if(this.nodeID.compareTo(evaluateID(this.successor.getHostAddress())) == 1)
+			if((evaluateID(node.getHostAddress()).compareTo(this.nodeID) == 1
+						&& evaluateID(node.getHostAddress()).compareTo(ringDimension) == -1)
+					|| (evaluateID(node.getHostAddress()).compareTo(BigInteger.valueOf((long) 0)) != -1
+						&& evaluateID(node.getHostAddress()).compareTo(evaluateID(this.successor.getHostAddress())) != 1))
 				return this.successor;
-		if(nodeID.compareTo(this.nodeID) == 1 && nodeID.compareTo(this.successor.getNodeID()) != 1)
+		if(evaluateID(node.getHostAddress()).compareTo(this.nodeID) == 1
+				&& evaluateID(node.getHostAddress()).compareTo(evaluateID(this.successor.getHostAddress())) != 1)
 			return this.successor;
-		return closestPrecedingNode(nodeID).findSuccessor(nodeID);
+		return closestPrecedingNode(node).findSuccessor(node);
 	}
 	
-	private Node closestPrecedingNode(BigInteger nodeID) { //gestire i casi con fingerTable.get(i).getNodeID() == NULL
+	private InetAddress closestPrecedingNode(InetAddress node) throws UnknownHostException, NoSuchAlgorithmException { //gestire i casi con fingerTable.get(i).getNodeID() == NULL
 		for(int i = m; i > 0; i--) {
-			if(this.nodeID.compareTo(this.successor.getNodeID()) == 1)
-				if((fingerTable.get(i).getNodeID().compareTo(this.nodeID) == 1 && fingerTable.get(i).getNodeID().compareTo(ringDimension) == -1) || (fingerTable.get(i).getNodeID().compareTo(BigInteger.valueOf((long) 0)) != -1 && fingerTable.get(i).getNodeID().compareTo(this.successor.getNodeID()) != 1))
+			if(this.nodeID.compareTo(evaluateID(this.successor.getHostAddress())) == 1)
+				if((evaluateID(fingerTable.get(i).getHostAddress()).compareTo(this.nodeID) == 1
+							&& evaluateID( fingerTable.get(i).getHostAddress()).compareTo(ringDimension) == -1)
+						|| (evaluateID(fingerTable.get(i).getHostAddress()).compareTo(BigInteger.valueOf((long) 0)) != -1
+							&& evaluateID(fingerTable.get(i).getHostAddress()).compareTo(evaluateID(this.successor.getHostAddress())) != 1))
 					return fingerTable.get(i);
-			if(fingerTable.get(i) != null && fingerTable.get(i).getNodeID().compareTo(this.nodeID) == 1 && fingerTable.get(i).getNodeID().compareTo(nodeID) == -1)
+			if(fingerTable.get(i) != null 
+					&& evaluateID(fingerTable.get(i).getHostAddress()).compareTo(this.nodeID) == 1
+					&& evaluateID(fingerTable.get(i).getHostAddress()).compareTo(nodeID) == -1)
 				return fingerTable.get(i);
 		}
-		return this;
+		return this.address;
 	}	 
 	
-	public void create() {
-		this.predecessor = this; //con NULL crasha al primo stabilize
-		this.successor = this;
+	public void create() throws UnknownHostException {
+		this.predecessor = this.address; //con NULL crasha al primo stabilize
+		this.successor = this.address;
 	}	
 	
-	public void join(Node node) {
+	public void join(InetAddress node) {
 		this.predecessor = null;
-		this.successor = node.findSuccessor(this.nodeID);
+		this.successor = node.findSuccessor(this.address);
 	}
 	
 	public void leave() throws IOException {
@@ -97,20 +102,27 @@ public class Node {
 	}
 	
 	public void stabilize() {
-		Node node = successor.getPredecessor().getSuccessor();
-		if(this.nodeID.compareTo(this.successor.getNodeID()) == 1)
-			if((node.getNodeID().compareTo(this.nodeID) == 1 && node.getNodeID().compareTo(ringDimension) == -1) || (node.getNodeID().compareTo(BigInteger.valueOf((long) 0)) != -1 && node.getNodeID().compareTo(this.successor.getNodeID()) == -1))
+		InetAddress node = successor.getPredecessor().getSuccessor();
+		if(this.nodeID.compareTo(evaluateID(this.successor.getHostAddress())) == 1)
+			if((evaluateID(node.getHostAddress()).compareTo(this.nodeID) == 1
+						&& evaluateID(node.getHostAddress()).compareTo(ringDimension) == -1)
+					|| (evaluateID(node.getHostAddress()).compareTo(BigInteger.valueOf((long) 0)) != -1
+						&& evaluateID(node.getHostAddress()).compareTo(evaluateID(this.successor.getHostAddress())) == -1))
 				this.successor = node;
-		if(node.getNodeID().compareTo(this.nodeID) == 1 && node.getNodeID().compareTo(this.successor.getNodeID()) == -1)
+		if(evaluateID(node.getHostAddress()).compareTo(this.nodeID) == 1 && evaluateID(node.getHostAddress()).compareTo(evaluateID(this.successor.getHostAddress())) == -1)
 			this.successor = node;
-		this.successor.notify(this);		
+		this.successor.notify(this.address);		
 	}
 
-	public void notify(Node node) {
-		if(this.predecessor != null && this.predecessor.getNodeID().compareTo(this.nodeID) == 1)
-			if((node.getNodeID().compareTo(this.predecessor.getNodeID()) == 1 && node.getNodeID().compareTo(ringDimension) == -1) || (node.getNodeID().compareTo(BigInteger.valueOf((long) 0)) != -1 && node.getNodeID().compareTo(this.nodeID) == -1))
+	public void notify(InetAddress node) throws NoSuchAlgorithmException {
+		if(this.predecessor != null && evaluateID(this.predecessor.getHostAddress()).compareTo(this.nodeID) == 1)
+			if((evaluateID(node.getHostAddress()).compareTo(evaluateID(this.successor.getHostAddress())) == 1
+						&& evaluateID(node.getHostAddress()).compareTo(ringDimension) == -1)
+					|| (evaluateID(node.getHostAddress()).compareTo(BigInteger.valueOf((long) 0)) != -1
+						&& evaluateID(node.getHostAddress()).compareTo(this.nodeID) == -1))
 				this.predecessor = node;
-		if(this.predecessor == null || (node.getNodeID().compareTo(this.predecessor.getNodeID()) == 1 && node.getNodeID().compareTo(this.nodeID) == -1))
+		if(this.predecessor == null
+					|| (evaluateID(node.getHostAddress()).compareTo(evaluateID(this.predecessor.getHostAddress())) == 1 && evaluateID(node.getHostAddress()).compareTo(this.nodeID) == -1))
 			this.predecessor = node;
 	}
 	
@@ -119,16 +131,23 @@ public class Node {
 	}
 	
 	public void checkPredecessor() throws UnknownHostException, IOException {
-		if(InetAddress.getByName(this.predecessor.getNodeIP()).isReachable(2000))
+		if(InetAddress.getByName(this.predecessor.getHostAddress()).isReachable(2000))
 			this.predecessor = null;
 	}
 	
-	private void printNodeInformation() {
+	private BigInteger evaluateID(String nodeIP) throws NoSuchAlgorithmException {
+		digest = MessageDigest.getInstance("SHA-1");
+		byte[] hash = digest.digest(nodeIP.getBytes(StandardCharsets.UTF_8));
+		
+		return new BigInteger(1, hash);
+	}
+	
+	private void printNodeInformation() throws NoSuchAlgorithmException {
 		System.out.println("Node IP\t\t" + this.nodeIP + "\nID dimension\t" + this.m + "\nNode ID\t\t" + this.nodeID + "\n" + this.digest.toString());
 		if(this.successor != null)
-			System.out.println("Successor ID\t\t" + this.successor.nodeID);
+			System.out.println("Successor ID\t\t" + evaluateID(this.successor.getHostAddress()));
 		if(this.predecessor != null)
-			System.out.println("Predecessor ID\t\t" + this.predecessor.nodeID);
+			System.out.println("Predecessor ID\t\t" + evaluateID(this.predecessor.getHostAddress()));
 		/*
 		for (BigInteger key: fingerTable.keySet()) {
             System.out.println(key + "\t" + fingerTable.get(key));
@@ -152,19 +171,19 @@ public class Node {
 		this.nodeID = nodeID;
 	}
 
-	public Node getPredecessor() {
+	public InetAddress getPredecessor() {
 		return predecessor;
 	}
 
-	public void setPredecessor(Node predecessor) {
+	public void setPredecessor(InetAddress predecessor) {
 		this.predecessor = predecessor;
 	}
 
-	public Node getSuccessor() {
+	public InetAddress getSuccessor() {
 		return successor;
 	}
 
-	public void setSuccessor(Node successor) {
+	public void setSuccessor(InetAddress successor) {
 		this.successor = successor;
 	}
 
