@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.ServerSocket;
-import java.net.Socket;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -89,6 +88,7 @@ public class Node {
 	public void leave() throws IOException {
 		serverSocket.close();
 	}
+	
 	public void stabilize() {
 		Node node = successor.getPredecessor().getSuccessor();
 		if(this.nodeID.compareTo(this.successor.getNodeID()) == 1)
@@ -151,7 +151,7 @@ public class Node {
 
 	public static void main (String[] args) throws NoSuchAlgorithmException, IOException {
 		Node n1 = new Node();
-		Node n2 = new Node();
+		/*Node n2 = new Node();
 		n1.create();
 		n2.join(n1);
 		n2.setNodeID(n2.getNodeID().add(BigInteger.valueOf((long) 1)));
@@ -162,6 +162,6 @@ public class Node {
 		System.out.println("N2 ID: " + n2.getNodeID() + "\nN2 successor: " + n2.successor.getNodeID() + "\nN2 predecessor: " + n2.predecessor.getNodeID());	
 		n1.stabilize();
 		//n2.join(n1);
-		System.out.println(n1.successor);
+		System.out.println(n1.successor);*/
 	}
 }
