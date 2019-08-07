@@ -34,6 +34,10 @@ public class RequestsHandler implements Runnable{
 				break;
 			case SUCC:
 				break;
+			case PRED:
+				break;
+			case NOTIFY:
+				break;
 			}
 			
 			in.close();

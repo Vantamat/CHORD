@@ -103,6 +103,12 @@ public class Node {
 		return this.address;
 	}	 
 	
+	private void createJSON(Command command) {
+		JSONObject json = new JSONObject();
+		json.put("op_code", command);
+		json.put("address", this.address);
+	}
+	
 	public void create() throws UnknownHostException {
 		this.predecessor = this.address; //con NULL crasha al primo stabilize
 		this.successor = this.address;
@@ -110,9 +116,7 @@ public class Node {
 	
 	public void join(InetAddress node) {
 		this.predecessor = null;
-		JSONObject json = new JSONObject();
-		json.put("op_code", Command.JOIN);
-		json.put("ip", nodeIP);
+		createJSON(Command.JOIN);
 	}
 	
 	public void leave() throws IOException {
@@ -129,7 +133,8 @@ public class Node {
 				this.successor = node;
 		if(evaluateID(node.getHostAddress()).compareTo(this.nodeID) == 1 && evaluateID(node.getHostAddress()).compareTo(evaluateID(this.successor.getHostAddress())) == -1)
 			this.successor = node;
-		this.successor.notify(this.address);		
+		//this.successor.notify(this.address);
+		createJSON(Command.NOTIFY);
 	}
 
 	public void notify(InetAddress node) throws NoSuchAlgorithmException {
@@ -207,17 +212,17 @@ public class Node {
 
 	public static void main (String[] args) throws NoSuchAlgorithmException, IOException {
 		Node n1 = new Node();
-		/*Node n2 = new Node();
+		//Node n2 = new Node();
 		n1.create();
-		n2.join(n1);
-		n2.setNodeID(n2.getNodeID().add(BigInteger.valueOf((long) 1)));
-		System.out.println("New N2 ID: " + n2.getNodeID());
-		n1.stabilize();
-		n2.stabilize();
-		System.out.println("N1 ID: " + n1.getNodeID() + "\nN1 successor: " + n1.successor.getNodeID() + "\nN1 predecessor: " + n1.predecessor.getNodeID());
-		System.out.println("N2 ID: " + n2.getNodeID() + "\nN2 successor: " + n2.successor.getNodeID() + "\nN2 predecessor: " + n2.predecessor.getNodeID());	
-		n1.stabilize();
 		//n2.join(n1);
-		System.out.println(n1.successor);*/
+		//n2.setNodeID(n2.getNodeID().add(BigInteger.valueOf((long) 1)));
+		//System.out.println("New N2 ID: " + n2.getNodeID());
+		n1.stabilize();
+		//n2.stabilize();
+		//System.out.println("N1 ID: " + n1.getNodeID() + "\nN1 successor: " + evaluateID(n1.successor.getHostAddress()) + "\nN1 predecessor: " + evaluateID(n1.predecessor.getHostAddress());
+		//System.out.println("N2 ID: " + n2.getNodeID() + "\nN2 successor: " + n2.successor.getNodeID() + "\nN2 predecessor: " + n2.predecessor.getNodeID());	
+		//n1.stabilize();
+		//n2.join(n1);
+		System.out.println(n1.successor);
 	}
 }
