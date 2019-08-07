@@ -10,20 +10,23 @@ import java.net.ServerSocket;
 
 public class Listener implements Runnable{
 	private ServerSocket serverSocket;
+	private Node node;
 	
 	
 	/**
 	 * @param serverSocket: la serverSocket che sarà utilizzata per essere contattati da altri nodi
 	 */
-	public Listener(ServerSocket serverSocket) {
+	public Listener(ServerSocket serverSocket, Node node) {
 		this.serverSocket = serverSocket;
+		this.node = node;
 	}
 	
 	@Override
 	public void run() {
 		try {
 			while(true) {
-				new Thread(new RequestsHandler(serverSocket.accept())).start();
+				System.out.println("Waiting for connections");
+				new Thread(new RequestsHandler(serverSocket.accept(), node)).start();
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
