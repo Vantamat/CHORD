@@ -13,6 +13,21 @@ import org.json.simple.JSONObject;
 
 public class Node {
 	
+	/* 
+	 * Args:
+	 *		nodeIP:
+	 *		nodeID:
+	 *		m:
+	 *		hash:
+	 *		ringDimension:
+	 *		digest:
+	 *		address:
+	 *		predecessor:
+	 *		successor:
+	 *		fingerTable:
+	 *		serverSocket:
+	 *		Listener:
+	*/
 	private String nodeIP;
 	private BigInteger nodeID;
 	private int m;
