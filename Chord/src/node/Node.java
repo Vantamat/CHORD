@@ -9,6 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.LinkedHashMap;
+import org.json.simple.JSONObject;
 
 public class Node {
 	
@@ -94,7 +95,9 @@ public class Node {
 	
 	public void join(InetAddress node) {
 		this.predecessor = null;
-		this.successor = node.findSuccessor(this.address);
+		JSONObject json = new JSONObject();
+		json.put("op_code", Command.JOIN);
+		json.put("ip", nodeIP);
 	}
 	
 	public void leave() throws IOException {

@@ -23,16 +23,16 @@ public class RequestsHandler implements Runnable{
 	 */
 	@Override
 	public void run() {
-		String line;
+		Command line;
 		Scanner in;
 		try {
 			in = new Scanner(socket.getInputStream());
-			line = in.nextLine();
+			line = Command.valueOf(in.nextLine());
 			
 			switch(line) {
-			case("1"):
+			case JOIN:
 				break;
-			case("2"):
+			case SUCC:
 				break;
 			}
 			
