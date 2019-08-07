@@ -106,10 +106,12 @@ public class Node {
 		return this.address;
 	}	 
 	
-	private void createJSON(Command command, InetAddress address) {
+	private JSONObject createJSON(Command command, InetAddress address) {
 		JSONObject json = new JSONObject();
 		json.put("op_code", command);
 		json.put("address", address);
+		
+		return json;
 	}
 	
 	public void create() throws UnknownHostException {
@@ -125,20 +127,19 @@ public class Node {
 		
 		Socket s = new Socket(address, 2345);
 		try (OutputStreamWriter out = new OutputStreamWriter(s.getOutputStream(), StandardCharsets.UTF_8)) {
-			out.write(json.toString());
+			out.write(createJSON(Command.JOIN, this.address).toString());
 		}
-		createJSON(Command.JOIN, this.address);
 	}
 
 	public void leave() throws IOException {
 		serverSocket.close();
 	}
 	
-	/*public void stabilize() {
+	public void stabilize() {
 		InetAddress node = successor.getPredecessor().getSuccessor();
 		if(this.nodeID.compareTo(evaluateID(this.successor.getHostAddress())) == 1)
 			if((evaluateID(node.getHostAddress()).compareTo(this.nodeID) == 1
-						&& evaluateID(node.getHostAddress()).compareTo(ringDimension) == -1)
+						&& evaluateID(node.getHostAddress()).compareTo(this.ringDimension) == -1)
 					|| (evaluateID(node.getHostAddress()).compareTo(BigInteger.valueOf((long) 0)) != -1
 						&& evaluateID(node.getHostAddress()).compareTo(evaluateID(this.successor.getHostAddress())) == -1))
 				this.successor = node;
