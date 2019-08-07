@@ -106,10 +106,10 @@ public class Node {
 		return this.address;
 	}	 
 	
-	private void createJSON(Command command) {
+	private void createJSON(Command command, InetAddress address) {
 		JSONObject json = new JSONObject();
 		json.put("op_code", command);
-		json.put("address", this.address);
+		json.put("address", address);
 	}
 	
 	public void create() throws UnknownHostException {
@@ -121,19 +121,13 @@ public class Node {
 
 	public void join(InetAddress address) throws UnknownHostException, IOException {
 		this.predecessor = null;
-		JSONObject json = new JSONObject();
-		json.put("op_code", Command.JOIN);
-		json.put("ip", nodeIP);
-		
 		System.out.println("almost done");
 		
 		Socket s = new Socket(address, 2345);
 		try (OutputStreamWriter out = new OutputStreamWriter(s.getOutputStream(), StandardCharsets.UTF_8)) {
 			out.write(json.toString());
 		}
-		
-		System.out.println("Done");
-		createJSON(Command.JOIN);
+		createJSON(Command.JOIN, this.address);
 	}
 
 	public void leave() throws IOException {
@@ -151,8 +145,8 @@ public class Node {
 		if(evaluateID(node.getHostAddress()).compareTo(this.nodeID) == 1 && evaluateID(node.getHostAddress()).compareTo(evaluateID(this.successor.getHostAddress())) == -1)
 			this.successor = node;
 		//this.successor.notify(this.address);
-		createJSON(Command.NOTIFY);
-	}*/
+		createJSON(Command.NOTIFY, this.address);
+	}
 
 	public void notify(InetAddress node) throws NoSuchAlgorithmException {
 		if(this.predecessor != null && evaluateID(this.predecessor.getHostAddress()).compareTo(this.nodeID) == 1)
@@ -162,7 +156,8 @@ public class Node {
 						&& evaluateID(node.getHostAddress()).compareTo(this.nodeID) == -1))
 				this.predecessor = node;
 		if(this.predecessor == null
-					|| (evaluateID(node.getHostAddress()).compareTo(evaluateID(this.predecessor.getHostAddress())) == 1 && evaluateID(node.getHostAddress()).compareTo(this.nodeID) == -1))
+					|| (evaluateID(node.getHostAddress()).compareTo(evaluateID(this.predecessor.getHostAddress())) == 1
+						&& evaluateID(node.getHostAddress()).compareTo(this.nodeID) == -1))
 			this.predecessor = node;
 	}
 
@@ -178,7 +173,7 @@ public class Node {
 	private BigInteger evaluateID(String nodeIP) throws NoSuchAlgorithmException {
 		digest = MessageDigest.getInstance("SHA-1");
 		hash = digest.digest(nodeIP.getBytes(StandardCharsets.UTF_8));
-
+		
 		return new BigInteger(1, hash);
 	}
 	
