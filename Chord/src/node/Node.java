@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.math.BigInteger;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
@@ -30,6 +31,7 @@ public class Node {
 	 *		predecessor:
 	 *		successor:
 	 *		fingerTable:
+	 *	 	port:
 	 *		serverSocket:
 	 *		Listener:
 	 */
@@ -47,6 +49,7 @@ public class Node {
 
 	private LinkedHashMap<BigInteger, InetAddress> fingerTable = new LinkedHashMap<BigInteger, InetAddress>();
 
+	private int port;
 	private ServerSocket serverSocket;
 	private Listener listener;
 
@@ -72,13 +75,15 @@ public class Node {
 		
 		//printNodeInformation();
 		
-		serverSocket = new ServerSocket(2345);
-		listener = new Listener(serverSocket, this);
+		this.port = 6007;
+		this.serverSocket = new ServerSocket();
+		this.serverSocket.bind(new InetSocketAddress(this.address, 6007));
+		this.listener = new Listener(serverSocket, this);
 		new Thread(listener).start();
-
+		
 	}
 
-	/*public InetAddress findSuccessor(InetAddress node) {
+	public InetAddress findSuccessor(InetAddress node) throws NoSuchAlgorithmException {
 		if(this.nodeID.compareTo(evaluateID(this.successor.getHostAddress())) == 1)
 			if((evaluateID(node.getHostAddress()).compareTo(this.nodeID) == 1
 						&& evaluateID(node.getHostAddress()).compareTo(ringDimension) == -1)
@@ -88,8 +93,8 @@ public class Node {
 		if(evaluateID(node.getHostAddress()).compareTo(this.nodeID) == 1
 				&& evaluateID(node.getHostAddress()).compareTo(evaluateID(this.successor.getHostAddress())) != 1)
 			return this.successor;
-		return closestPrecedingNode(node).findSuccessor(node);
-	}*/
+		return node; //closestPrecedingNode(node).findSuccessor(node);
+	}
 
 	private InetAddress closestPrecedingNode(InetAddress node) throws UnknownHostException, NoSuchAlgorithmException { //gestire i casi con fingerTable.get(i).getNodeID() == NULL
 		for(int i = m; i > 0; i--) {
@@ -124,12 +129,17 @@ public class Node {
 
 	public void join(InetAddress address) throws UnknownHostException, IOException {
 		this.predecessor = null;
-		System.out.println("almost done");
-		
-		Socket s = new Socket(address, 2345);
-		try (OutputStreamWriter out = new OutputStreamWriter(s.getOutputStream(), StandardCharsets.UTF_8)) {
+		System.out.println("MEZZO YEEEH");
+		System.out.println(address + " " + this.port);
+		Socket s = new Socket(address, this.port);
+		System.out.println("SINGOLO YEEEH");
+		OutputStreamWriter out = new OutputStreamWriter(s.getOutputStream(), StandardCharsets.UTF_8);
+		System.out.println("DOPIO YEEEH");
+		try {
 			out.write(createJSON(Command.JOIN, this.address).toString());
-		}
+			System.out.println("TRIPLO YEEEH");
+		}finally{}
+		System.out.println("QUI TANTO NON CI ARRIVA");
 	}
 
 	public void leave() throws IOException {
@@ -239,7 +249,7 @@ public class Node {
 			break;
 		}
 		//Node n2 = new Node();
-		//Node n2 = new Node();
+		//Node n2 = new Node();1
 		//n1.create();
 		//n2.join(n1);
 		//n2.setNodeID(n2.getNodeID().add(BigInteger.valueOf((long) 1)));

@@ -2,6 +2,7 @@ package node;
 
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.net.Socket;
 
 /**
  * Listener continua a stare in ascolto per richieste di connessione provenienti da altri nodi della rete,
@@ -26,7 +27,8 @@ public class Listener implements Runnable{
 		try {
 			while(true) {
 				System.out.println("Waiting for connections");
-				new Thread(new RequestsHandler(serverSocket.accept(), node)).start();
+				Socket socket = serverSocket.accept();
+				new Thread(new RequestsHandler(socket, node)).start();
 			}
 		} catch (IOException e) {
 			e.printStackTrace();

@@ -1,10 +1,13 @@
 package node;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.Socket;
+import java.security.NoSuchAlgorithmException;
 import java.text.ParseException;
 import java.util.Scanner;
 
+import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
@@ -40,6 +43,7 @@ public class RequestsHandler implements Runnable{
 			switch(Command.valueOf((String) json.get("op_code"))) {
 			case JOIN:
 				System.out.println("Join");
+				node.findSuccessor(InetAddress.getByName(json.get("address").toString()));
 				break;
 			case SUCC:
 				System.out.println("Succ");
@@ -52,7 +56,7 @@ public class RequestsHandler implements Runnable{
 			
 			in.close();
 			socket.close();
-		} catch (IOException e) {
+		} catch (IOException | NoSuchAlgorithmException | JSONException e) {
 			e.printStackTrace();
 		}
 	}
