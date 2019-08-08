@@ -2,12 +2,10 @@ package node;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.text.ParseException;
 import java.util.Scanner;
 
-import org.json.simple.JSONAware;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
+import org.json.JSONObject;
 
 /**
  * RequestHandler viene generata una volta ricevuta una richiesta di connessione da un nodo della rete. La classe si occupa
@@ -32,14 +30,19 @@ public class RequestsHandler implements Runnable{
 	public void run() {
 		try {
 			System.out.println("Connection recived, handling request...");
-			JSONParser parser = new JSONParser();
+			//JSONParser parser = new JSONParser();
 			Scanner in = new Scanner(socket.getInputStream());
-			JSONObject json = (JSONObject) parser.parse(in.nextLine());
+			String j = in.nextLine();
+			JSONObject json = new JSONObject(j);
+			System.out.println(j);
+			//JSONObject json = (JSONObject) parser.parse(j);
 			
 			switch(Command.valueOf((String) json.get("op_code"))) {
 			case JOIN:
+				System.out.println("Join");
 				break;
 			case SUCC:
+				System.out.println("Succ");
 				break;
 			case PRED:
 				break;
@@ -49,7 +52,7 @@ public class RequestsHandler implements Runnable{
 			
 			in.close();
 			socket.close();
-		} catch (IOException | ParseException e) {
+		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}

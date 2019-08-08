@@ -13,7 +13,8 @@ import java.security.NoSuchAlgorithmException;
 import java.util.LinkedHashMap;
 import java.util.Scanner;
 
-import org.json.simple.JSONObject;
+import org.json.JSONObject;
+
 
 public class Node {
 
@@ -135,7 +136,7 @@ public class Node {
 		serverSocket.close();
 	}
 	
-	public void stabilize() {
+	/*public void stabilize() {
 		InetAddress node = successor.getPredecessor().getSuccessor();
 		if(this.nodeID.compareTo(evaluateID(this.successor.getHostAddress())) == 1)
 			if((evaluateID(node.getHostAddress()).compareTo(this.nodeID) == 1
@@ -147,7 +148,7 @@ public class Node {
 			this.successor = node;
 		//this.successor.notify(this.address);
 		createJSON(Command.NOTIFY, this.address);
-	}
+	}*/
 
 	public void notify(InetAddress node) throws NoSuchAlgorithmException {
 		if(this.predecessor != null && evaluateID(this.predecessor.getHostAddress()).compareTo(this.nodeID) == 1)
