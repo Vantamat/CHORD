@@ -2,6 +2,7 @@ package node;
 
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.io.PrintStream;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -55,18 +56,18 @@ public class Node {
 
 	public Node() throws IOException, NoSuchAlgorithmException{
 
-		this.address = InetAddress.getLocalHost();
-		this.nodeIP = this.address.getHostAddress();
-		this.nodeID = evaluateID(this.nodeIP);
-		this.m = hash.length * 8;
-		this.ringDimension = BigInteger.valueOf((long) 2).pow(m);
+		address = InetAddress.getLocalHost();
+		nodeIP = address.getHostAddress();
+		nodeID = evaluateID(nodeIP);
+		m = hash.length * 8;
+		ringDimension = BigInteger.valueOf((long) 2).pow(m);
 		
 		for(int i = 0; i < m; i++) {
-			BigInteger entryKey = this.nodeID.add(BigInteger.valueOf((long) 2).pow(i)).mod(ringDimension);
+			BigInteger entryKey = nodeID.add(BigInteger.valueOf((long) 2).pow(i)).mod(ringDimension);
 			InetAddress entryValue = null;
-			this.fingerTable.put(entryKey, entryValue);
+			fingerTable.put(entryKey, entryValue);
 		}		
-		System.out.println("nodeIP\t" + this.nodeIP + "\nm\t" + this.m + "\nnodeID\t" + this.nodeID + "\n" + this.digest.toString());
+		System.out.println("nodeIP\t" + nodeIP + "\nm\t" + m + "\nnodeID\t" + nodeID + "\n" + digest.toString());
 		/*
 		for (BigInteger key: fingerTable.keySet()) {
             System.out.println(key + "\t" + fingerTable.get(key));
@@ -75,41 +76,41 @@ public class Node {
 		
 		//printNodeInformation();
 		
-		this.port = 6007;
-		this.serverSocket = new ServerSocket();
-		this.serverSocket.bind(new InetSocketAddress(this.address, 6007));
-		this.listener = new Listener(serverSocket, this);
+		port = 6007;
+		serverSocket = new ServerSocket();
+		serverSocket.bind(new InetSocketAddress(address, 6007));
+		listener = new Listener(serverSocket, this);
 		new Thread(listener).start();
 		
 	}
 
 	public InetAddress findSuccessor(InetAddress node) throws NoSuchAlgorithmException {
-		if(this.nodeID.compareTo(evaluateID(this.successor.getHostAddress())) == 1)
-			if((evaluateID(node.getHostAddress()).compareTo(this.nodeID) == 1
+		if(nodeID.compareTo(evaluateID(successor.getHostAddress())) == 1)
+			if((evaluateID(node.getHostAddress()).compareTo(nodeID) == 1
 						&& evaluateID(node.getHostAddress()).compareTo(ringDimension) == -1)
 					|| (evaluateID(node.getHostAddress()).compareTo(BigInteger.valueOf((long) 0)) != -1
-						&& evaluateID(node.getHostAddress()).compareTo(evaluateID(this.successor.getHostAddress())) != 1))
-				return this.successor;
-		if(evaluateID(node.getHostAddress()).compareTo(this.nodeID) == 1
-				&& evaluateID(node.getHostAddress()).compareTo(evaluateID(this.successor.getHostAddress())) != 1)
-			return this.successor;
+						&& evaluateID(node.getHostAddress()).compareTo(evaluateID(successor.getHostAddress())) != 1))
+				return successor;
+		if(evaluateID(node.getHostAddress()).compareTo(nodeID) == 1
+				&& evaluateID(node.getHostAddress()).compareTo(evaluateID(successor.getHostAddress())) != 1)
+			return successor;
 		return node; //closestPrecedingNode(node).findSuccessor(node);
 	}
 
 	private InetAddress closestPrecedingNode(InetAddress node) throws UnknownHostException, NoSuchAlgorithmException { //gestire i casi con fingerTable.get(i).getNodeID() == NULL
 		for(int i = m; i > 0; i--) {
-			if(this.nodeID.compareTo(evaluateID(this.successor.getHostAddress())) == 1)
-				if((evaluateID(fingerTable.get(i).getHostAddress()).compareTo(this.nodeID) == 1
+			if(nodeID.compareTo(evaluateID(successor.getHostAddress())) == 1)
+				if((evaluateID(fingerTable.get(i).getHostAddress()).compareTo(nodeID) == 1
 							&& evaluateID( fingerTable.get(i).getHostAddress()).compareTo(ringDimension) == -1)
 						|| (evaluateID(fingerTable.get(i).getHostAddress()).compareTo(BigInteger.valueOf((long) 0)) != -1
-							&& evaluateID(fingerTable.get(i).getHostAddress()).compareTo(evaluateID(this.successor.getHostAddress())) != 1))
+							&& evaluateID(fingerTable.get(i).getHostAddress()).compareTo(evaluateID(successor.getHostAddress())) != 1))
 					return fingerTable.get(i);
 			if(fingerTable.get(i) != null 
-					&& evaluateID(fingerTable.get(i).getHostAddress()).compareTo(this.nodeID) == 1
+					&& evaluateID(fingerTable.get(i).getHostAddress()).compareTo(nodeID) == 1
 					&& evaluateID(fingerTable.get(i).getHostAddress()).compareTo(nodeID) == -1)
 				return fingerTable.get(i);
 		}
-		return this.address;
+		return address;
 	}	 
 	
 	private JSONObject createJSON(Command command, InetAddress address) {
@@ -121,22 +122,24 @@ public class Node {
 	}
 	
 	public void create() throws UnknownHostException {
-		this.predecessor = this.address; //con NULL crasha al primo stabilize
-		this.successor = this.address;
+		predecessor = address; //con NULL crasha al primo stabilize
+		successor = address;
 		
 		System.out.println("Created");
 	}	
 
 	public void join(InetAddress address) throws UnknownHostException, IOException {
-		this.predecessor = null;
+		predecessor = null;
 		System.out.println("MEZZO YEEEH");
-		System.out.println(address + " " + this.port);
-		Socket s = new Socket(address, this.port);
+		System.out.println(address + " " + port);
+		Socket s = new Socket(address, port);
 		System.out.println("SINGOLO YEEEH");
-		OutputStreamWriter out = new OutputStreamWriter(s.getOutputStream(), StandardCharsets.UTF_8);
+		//OutputStreamWriter out = new OutputStreamWriter(s.getOutputStream(), StandardCharsets.UTF_8);
+		PrintStream out = new PrintStream(s.getOutputStream());
 		System.out.println("DOPIO YEEEH");
 		try {
-			out.write(createJSON(Command.JOIN, this.address).toString());
+			//out.write(createJSON(Command.JOIN, address).toString());
+			out.println(createJSON(Command.JOIN, address).toString());
 			System.out.println("TRIPLO YEEEH");
 		}finally{}
 		System.out.println("QUI TANTO NON CI ARRIVA");
@@ -148,29 +151,30 @@ public class Node {
 	
 	/*public void stabilize() {
 		InetAddress node = successor.getPredecessor().getSuccessor();
-		if(this.nodeID.compareTo(evaluateID(this.successor.getHostAddress())) == 1)
-			if((evaluateID(node.getHostAddress()).compareTo(this.nodeID) == 1
-						&& evaluateID(node.getHostAddress()).compareTo(this.ringDimension) == -1)
+		if(nodeID.compareTo(evaluateID(successor.getHostAddress())) == 1)
+			if((evaluateID(node.getHostAddress()).compareTo(nodeID) == 1
+						&& evaluateID(node.getHostAddress()).compareTo(ringDimension) == -1)
 					|| (evaluateID(node.getHostAddress()).compareTo(BigInteger.valueOf((long) 0)) != -1
-						&& evaluateID(node.getHostAddress()).compareTo(evaluateID(this.successor.getHostAddress())) == -1))
-				this.successor = node;
-		if(evaluateID(node.getHostAddress()).compareTo(this.nodeID) == 1 && evaluateID(node.getHostAddress()).compareTo(evaluateID(this.successor.getHostAddress())) == -1)
-			this.successor = node;
+						&& evaluateID(node.getHostAddress()).compareTo(evaluateID(successor.getHostAddress())) == -1))
+				successor = node;
+		if(evaluateID(node.getHostAddress()).compareTo(nodeID) == 1
+				&& evaluateID(node.getHostAddress()).compareTo(evaluateID(successor.getHostAddress())) == -1)
+			successor = node;
 		//this.successor.notify(this.address);
-		createJSON(Command.NOTIFY, this.address);
+		createJSON(Command.NOTIFY, address);
 	}*/
 
 	public void notify(InetAddress node) throws NoSuchAlgorithmException {
-		if(this.predecessor != null && evaluateID(this.predecessor.getHostAddress()).compareTo(this.nodeID) == 1)
-			if((evaluateID(node.getHostAddress()).compareTo(evaluateID(this.successor.getHostAddress())) == 1
+		if(predecessor != null && evaluateID(predecessor.getHostAddress()).compareTo(nodeID) == 1)
+			if((evaluateID(node.getHostAddress()).compareTo(evaluateID(successor.getHostAddress())) == 1
 						&& evaluateID(node.getHostAddress()).compareTo(ringDimension) == -1)
 					|| (evaluateID(node.getHostAddress()).compareTo(BigInteger.valueOf((long) 0)) != -1
-						&& evaluateID(node.getHostAddress()).compareTo(this.nodeID) == -1))
-				this.predecessor = node;
-		if(this.predecessor == null
-					|| (evaluateID(node.getHostAddress()).compareTo(evaluateID(this.predecessor.getHostAddress())) == 1
-						&& evaluateID(node.getHostAddress()).compareTo(this.nodeID) == -1))
-			this.predecessor = node;
+						&& evaluateID(node.getHostAddress()).compareTo(nodeID) == -1))
+				predecessor = node;
+		if(predecessor == null
+					|| (evaluateID(node.getHostAddress()).compareTo(evaluateID(predecessor.getHostAddress())) == 1
+						&& evaluateID(node.getHostAddress()).compareTo(nodeID) == -1))
+			predecessor = node;
 	}
 
 	public void fixFingers() {
@@ -178,8 +182,8 @@ public class Node {
 	}
 
 	public void checkPredecessor() throws UnknownHostException, IOException {
-		if(InetAddress.getByName(this.predecessor.getHostAddress()).isReachable(2000))
-			this.predecessor = null;
+		if(InetAddress.getByName(predecessor.getHostAddress()).isReachable(2000))
+			predecessor = null;
 	}
 	 
 	private BigInteger evaluateID(String nodeIP) throws NoSuchAlgorithmException {
@@ -190,11 +194,11 @@ public class Node {
 	}
 	
 	private void printNodeInformation() throws NoSuchAlgorithmException {
-		System.out.println("Node IP\t\t" + this.nodeIP + "\nID dimension\t" + this.m + "\nNode ID\t\t" + this.nodeID + "\n" + this.digest.toString());
-		if(this.successor != null)
-			System.out.println("Successor ID\t\t" + evaluateID(this.successor.getHostAddress()));
-		if(this.predecessor != null)
-			System.out.println("Predecessor ID\t\t" + evaluateID(this.predecessor.getHostAddress()));
+		System.out.println("Node IP\t\t" + nodeIP + "\nID dimension\t" + m + "\nNode ID\t\t" + nodeID + "\n" + digest.toString());
+		if(successor != null)
+			System.out.println("Successor ID\t\t" + evaluateID(successor.getHostAddress()));
+		if(predecessor != null)
+			System.out.println("Predecessor ID\t\t" + evaluateID(predecessor.getHostAddress()));
 
 		//for (BigInteger key: fingerTable.keySet()) {
         //    System.out.println(key + "\t" + fingerTable.get(key));
