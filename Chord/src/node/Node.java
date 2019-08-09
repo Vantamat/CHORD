@@ -84,7 +84,7 @@ public class Node {
 		
 	}
 
-	public InetAddress findSuccessor(InetAddress node) throws NoSuchAlgorithmException {
+	public InetAddress findSuccessor(InetAddress node) throws NoSuchAlgorithmException, IOException {
 		if(nodeID.compareTo(evaluateID(successor.getHostAddress())) == 1)
 			if((evaluateID(node.getHostAddress()).compareTo(nodeID) == 1
 						&& evaluateID(node.getHostAddress()).compareTo(ringDimension) == -1)
@@ -94,6 +94,8 @@ public class Node {
 		if(evaluateID(node.getHostAddress()).compareTo(nodeID) == 1
 				&& evaluateID(node.getHostAddress()).compareTo(evaluateID(successor.getHostAddress())) != 1)
 			return successor;
+		InetAddress closestNode = closestPrecedingNode(node);
+		//createJSON(Command.SUCC, closestNode);
 		return node; //closestPrecedingNode(node).findSuccessor(node);
 	}
 
@@ -113,36 +115,29 @@ public class Node {
 		return address;
 	}	 
 	
-	private JSONObject createJSON(Command command, InetAddress address) {
+	private void createJSON(Command command, String address) throws IOException {
+		Socket socket = new Socket(address, port);
+		PrintStream out = new PrintStream(socket.getOutputStream());
 		JSONObject json = new JSONObject();
 		json.put("op_code", command);
 		json.put("address", address);
-		
-		return json;
+		try {
+			out.println(json.toString());
+		}finally {
+			socket.close();
+		}
 	}
 	
 	public void create() throws UnknownHostException {
 		predecessor = address; //con NULL crasha al primo stabilize
 		successor = address;
-		
 		System.out.println("Created");
 	}	
 
 	public void join(InetAddress address) throws UnknownHostException, IOException {
 		predecessor = null;
-		System.out.println("MEZZO YEEEH");
-		System.out.println(address + " " + port);
-		Socket s = new Socket(address, port);
-		System.out.println("SINGOLO YEEEH");
-		OutputStreamWriter out = new OutputStreamWriter(s.getOutputStream(), StandardCharsets.UTF_8);
-		//PrintStream out = new PrintStream(s.getOutputStream());
-		System.out.println("DOPIO YEEEH");
-		try {
-			out.write(createJSON(Command.JOIN, address).toString());
-			//out.println(createJSON(Command.JOIN, address).toString());
-			System.out.println("TRIPLO YEEEH");
-		}finally{}
-		System.out.println("QUI TANTO NON CI ARRIVA");
+		System.out.println("Trying to join the ring");
+		createJSON(Command.JOIN, address.getHostAddress());
 	}
 
 	public void leave() throws IOException {

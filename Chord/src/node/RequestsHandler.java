@@ -35,20 +35,22 @@ public class RequestsHandler implements Runnable{
 			System.out.println("Connection recived, handling request...");
 			//JSONParser parser = new JSONParser();
 			Scanner in = new Scanner(socket.getInputStream());
-			System.out.println("SI PIANTA A NEXT LINE");
 			String j = in.nextLine();
-			System.out.println("SI PIANTA A JSONOBJECT");
 			JSONObject json = new JSONObject(j);
 			System.out.println(j);
 			//JSONObject json = (JSONObject) parser.parse(j);
 			
 			switch(Command.valueOf((String) json.get("op_code"))) {
 			case JOIN:
-				System.out.println("Join");
-				node.findSuccessor(InetAddress.getByName(json.get("address").toString()));
+				System.out.println("Attempt to join");
+				String s = json.get("address").toString();
+				//if(s.charAt(0)=='/')
+					//s = s.substring(1, s.length());
+				System.out.println(s);
+				node.findSuccessor(InetAddress.getByName(s));
 				break;
 			case SUCC:
-				System.out.println("Succ");
+				System.out.println("Find");
 				break;
 			case PRED:
 				break;
