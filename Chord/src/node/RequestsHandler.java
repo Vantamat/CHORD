@@ -37,22 +37,28 @@ public class RequestsHandler implements Runnable{
 			String j = in.nextLine();
 			JSONObject json = new JSONObject(j);
 			System.out.println(j);
-			String string = json.get("address").toString();
+			String originalSender = json.get("original_sender").toString();
+			String currentSender = json.get("current_sender").toString();
 			switch(Command.valueOf((String) json.get("op_code"))) {
 			case JOIN:
 				System.out.println("Attempt to join");
-				System.out.println(string);
+				System.out.println(currentSender);
 				//if(string.charAt(0)=='/')
 					//string = string.substring(1, string.length());
-				node.findSuccessor(InetAddress.getByName(string));
+				node.findSuccessor(InetAddress.getByName(currentSender), node.getNodeIP());
 				break;
 			case SUCC_REQ:
 				System.out.println("Request to find the successor");
-				node.findSuccessor(InetAddress.getByName(string));
+				node.findSuccessor(InetAddress.getByName(currentSender), originalSender);
 				break;
 			case SUCC_RES:
-				System.out.println("Successor found: " + InetAddress.getByName(string));
-				node.findSuccessor(InetAddress.getByName(string));
+				System.out.println("Successor found: " + InetAddress.getByName(currentSender));
+				if(originalSender == currentSender) {
+					node.setSuccessor(InetAddress.getByName(currentSender));
+					System.out.println("Successor changed");
+				}
+				else
+					node.createJSON(Command.SUCC_RES, originalSender, node.getNodeIP());
 			case PRED:
 				break;
 			case NOTIFY:

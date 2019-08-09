@@ -84,18 +84,21 @@ public class Node {
 		
 	}
 
-	public void findSuccessor(InetAddress node) throws NoSuchAlgorithmException, IOException {
+	public void findSuccessor(InetAddress node, String originalSender) throws NoSuchAlgorithmException, IOException {
+		System.out.println(nodeID + " " + evaluateID(successor.getHostAddress()) + " " + evaluateID(closestPrecedingNode(node).getHostAddress()));
+		if(nodeID.compareTo(evaluateID(successor.getHostAddress())) == 0)
+			createJSON(Command.SUCC_RES, originalSender, successor.getHostAddress());
 		if(nodeID.compareTo(evaluateID(successor.getHostAddress())) == 1)
 			if((evaluateID(node.getHostAddress()).compareTo(nodeID) == 1
 						&& evaluateID(node.getHostAddress()).compareTo(ringDimension) == -1)
 					|| (evaluateID(node.getHostAddress()).compareTo(BigInteger.valueOf((long) 0)) != -1
 						&& evaluateID(node.getHostAddress()).compareTo(evaluateID(successor.getHostAddress())) != 1))
-				createJSON(Command.SUCC_RES, successor.getHostAddress());
+				createJSON(Command.SUCC_RES, originalSender, successor.getHostAddress());
 		if(evaluateID(node.getHostAddress()).compareTo(nodeID) == 1
 				&& evaluateID(node.getHostAddress()).compareTo(evaluateID(successor.getHostAddress())) != 1)
-			createJSON(Command.SUCC_RES, successor.getHostAddress());
+			createJSON(Command.SUCC_RES, originalSender, successor.getHostAddress());
 		else
-			createJSON(Command.SUCC_REQ, closestPrecedingNode(node).getHostAddress());
+			createJSON(Command.SUCC_REQ, originalSender, closestPrecedingNode(node).getHostAddress());
 	}
 
 	private InetAddress closestPrecedingNode(InetAddress node) throws UnknownHostException, NoSuchAlgorithmException { //gestire i casi con fingerTable.get(i).getNodeID() == NULL
@@ -114,12 +117,13 @@ public class Node {
 		return address;
 	}	 
 	
-	private void createJSON(Command command, String address) throws IOException {
+	public void createJSON(Command command, String originalSender, String currentSender) throws IOException {
 		Socket socket = new Socket(address, port);
 		PrintStream out = new PrintStream(socket.getOutputStream());
 		JSONObject json = new JSONObject();
 		json.put("op_code", command);
-		json.put("address", address);
+		json.put("original_sender", originalSender);
+		json.put("current_sender", currentSender);
 		try {
 			out.println(json.toString());
 		}finally {
@@ -136,7 +140,7 @@ public class Node {
 	public void join(InetAddress address) throws UnknownHostException, IOException {
 		predecessor = null;
 		System.out.println("Trying to join the ring");
-		createJSON(Command.JOIN, address.getHostAddress());
+		createJSON(Command.JOIN, address.getHostAddress(), address.getHostAddress());
 	}
 
 	public void leave() throws IOException {
