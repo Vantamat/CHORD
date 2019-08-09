@@ -84,19 +84,18 @@ public class Node {
 		
 	}
 
-	public InetAddress findSuccessor(InetAddress node) throws NoSuchAlgorithmException, IOException {
+	public void findSuccessor(InetAddress node) throws NoSuchAlgorithmException, IOException {
 		if(nodeID.compareTo(evaluateID(successor.getHostAddress())) == 1)
 			if((evaluateID(node.getHostAddress()).compareTo(nodeID) == 1
 						&& evaluateID(node.getHostAddress()).compareTo(ringDimension) == -1)
 					|| (evaluateID(node.getHostAddress()).compareTo(BigInteger.valueOf((long) 0)) != -1
 						&& evaluateID(node.getHostAddress()).compareTo(evaluateID(successor.getHostAddress())) != 1))
-				return successor;
+				createJSON(Command.SUCC_RES, successor.getHostAddress());
 		if(evaluateID(node.getHostAddress()).compareTo(nodeID) == 1
 				&& evaluateID(node.getHostAddress()).compareTo(evaluateID(successor.getHostAddress())) != 1)
-			return successor;
-		InetAddress closestNode = closestPrecedingNode(node);
-		//createJSON(Command.SUCC, closestNode);
-		return node; //closestPrecedingNode(node).findSuccessor(node);
+			createJSON(Command.SUCC_RES, successor.getHostAddress());
+		else
+			createJSON(Command.SUCC_REQ, closestPrecedingNode(node).getHostAddress());
 	}
 
 	private InetAddress closestPrecedingNode(InetAddress node) throws UnknownHostException, NoSuchAlgorithmException { //gestire i casi con fingerTable.get(i).getNodeID() == NULL

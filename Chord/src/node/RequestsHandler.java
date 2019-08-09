@@ -38,18 +38,21 @@ public class RequestsHandler implements Runnable{
 			JSONObject json = new JSONObject(j);
 			System.out.println(j);
 			String string = json.get("address").toString();
-			System.out.println(string);
 			switch(Command.valueOf((String) json.get("op_code"))) {
 			case JOIN:
 				System.out.println("Attempt to join");
+				System.out.println(string);
 				//if(string.charAt(0)=='/')
-					//string = string.substring(1, s.length());
+					//string = string.substring(1, string.length());
 				node.findSuccessor(InetAddress.getByName(string));
 				break;
-			case SUCC:
+			case SUCC_REQ:
 				System.out.println("Request to find the successor");
 				node.findSuccessor(InetAddress.getByName(string));
 				break;
+			case SUCC_RES:
+				System.out.println("Successor found: " + InetAddress.getByName(string));
+				node.findSuccessor(InetAddress.getByName(string));
 			case PRED:
 				break;
 			case NOTIFY:

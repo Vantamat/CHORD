@@ -1,5 +1,5 @@
 package node;
 
 public enum Command {
-	JOIN, SUCC, PRED, NOTIFY
+	JOIN, SUCC_REQ, SUCC_RES, PRED, NOTIFY
 }
