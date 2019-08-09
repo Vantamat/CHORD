@@ -33,24 +33,22 @@ public class RequestsHandler implements Runnable{
 	public void run() {
 		try {
 			System.out.println("Connection recived, handling request...");
-			//JSONParser parser = new JSONParser();
 			Scanner in = new Scanner(socket.getInputStream());
 			String j = in.nextLine();
 			JSONObject json = new JSONObject(j);
 			System.out.println(j);
-			//JSONObject json = (JSONObject) parser.parse(j);
-			
+			String string = json.get("address").toString();
+			System.out.println(string);
 			switch(Command.valueOf((String) json.get("op_code"))) {
 			case JOIN:
 				System.out.println("Attempt to join");
-				String s = json.get("address").toString();
-				//if(s.charAt(0)=='/')
-					//s = s.substring(1, s.length());
-				System.out.println(s);
-				node.findSuccessor(InetAddress.getByName(s));
+				//if(string.charAt(0)=='/')
+					//string = string.substring(1, s.length());
+				node.findSuccessor(InetAddress.getByName(string));
 				break;
 			case SUCC:
-				System.out.println("Find");
+				System.out.println("Request to find the successor");
+				node.findSuccessor(InetAddress.getByName(string));
 				break;
 			case PRED:
 				break;
