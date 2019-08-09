@@ -52,13 +52,13 @@ public class RequestsHandler implements Runnable{
 				node.findSuccessor(InetAddress.getByName(currentSender), originalSender);
 				break;
 			case SUCC_RES:
-				System.out.println("Successor found: " + InetAddress.getByName(currentSender));
-				if(originalSender == currentSender) {
-					node.setSuccessor(InetAddress.getByName(currentSender));
+				System.out.println("Successor found: " + currentSender);
+				if(originalSender == node.getNodeIP()) {
+					node.setSuccessor(InetAddress.getByName(json.getString("address").toString()));
 					System.out.println("Successor changed");
 				}
 				else
-					node.createJSON(Command.SUCC_RES, originalSender, node.getNodeIP());
+					node.createJSON(Command.SUCC_RES, originalSender, node.getNodeIP(), json.getString("address").toString());
 			case PRED:
 				break;
 			case NOTIFY:
