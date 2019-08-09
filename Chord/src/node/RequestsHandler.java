@@ -35,7 +35,9 @@ public class RequestsHandler implements Runnable{
 			System.out.println("Connection recived, handling request...");
 			//JSONParser parser = new JSONParser();
 			Scanner in = new Scanner(socket.getInputStream());
+			System.out.println("SI PIANTA A NEXT LINE");
 			String j = in.nextLine();
+			System.out.println("SI PIANTA A JSONOBJECT");
 			JSONObject json = new JSONObject(j);
 			System.out.println(j);
 			//JSONObject json = (JSONObject) parser.parse(j);

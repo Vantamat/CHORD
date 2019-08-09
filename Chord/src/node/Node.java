@@ -134,12 +134,12 @@ public class Node {
 		System.out.println(address + " " + port);
 		Socket s = new Socket(address, port);
 		System.out.println("SINGOLO YEEEH");
-		//OutputStreamWriter out = new OutputStreamWriter(s.getOutputStream(), StandardCharsets.UTF_8);
-		PrintStream out = new PrintStream(s.getOutputStream());
+		OutputStreamWriter out = new OutputStreamWriter(s.getOutputStream(), StandardCharsets.UTF_8);
+		//PrintStream out = new PrintStream(s.getOutputStream());
 		System.out.println("DOPIO YEEEH");
 		try {
-			//out.write(createJSON(Command.JOIN, address).toString());
-			out.println(createJSON(Command.JOIN, address).toString());
+			out.write(createJSON(Command.JOIN, address).toString());
+			//out.println(createJSON(Command.JOIN, address).toString());
 			System.out.println("TRIPLO YEEEH");
 		}finally{}
 		System.out.println("QUI TANTO NON CI ARRIVA");
