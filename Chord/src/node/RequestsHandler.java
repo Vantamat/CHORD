@@ -24,7 +24,7 @@ public class RequestsHandler implements Runnable{
 		this.socket = socket;
 		this.node = node;
 	}
-	
+
 	/**
 	 * in questo run il nodo resterà in ascolto dei messaggi provenienti dal nodo che ha aperto la comunicazione, da quest'ultimo 
 	 * riceverà delle stringhe (enum?) ed in base al loro valore verranno eseguite diverse operazioni
@@ -36,35 +36,54 @@ public class RequestsHandler implements Runnable{
 			Scanner in = new Scanner(socket.getInputStream());
 			String j = in.nextLine();
 			JSONObject json = new JSONObject(j);
-			System.out.println(j);
+			//System.out.println(j);
 			String originalSender = json.get("original_sender").toString();
 			String currentSender = json.get("current_sender").toString();
+
 			switch(Command.valueOf((String) json.get("op_code"))) {
 			case JOIN:
-				System.out.println("Attempt to join");
-				System.out.println(currentSender);
+				System.out.println("Attempt to join " + currentSender);
 				//if(string.charAt(0)=='/')
-					//string = string.substring(1, string.length());
-				node.findSuccessor(InetAddress.getByName(currentSender), node.getNodeIP());
+				//string = string.substring(1, string.length());
+				node.findSuccessor(InetAddress.getByName(currentSender), originalSender);
 				break;
+
 			case SUCC_REQ:
 				System.out.println("Request to find the successor");
 				node.findSuccessor(InetAddress.getByName(currentSender), originalSender);
 				break;
+
 			case SUCC_RES:
 				System.out.println("Successor found: " + currentSender);
-				if(originalSender == node.getNodeIP()) {
+				if(originalSender.compareTo(node.getNodeIP()) == 0) {
 					node.setSuccessor(InetAddress.getByName(json.getString("address").toString()));
-					System.out.println("Successor changed");
+					System.out.println("Scuccessor changed");
+					
+					synchronized(node) {
+						node.notifyAll();
+					}
+					
 				}
 				else
 					node.createJSON(Command.SUCC_RES, originalSender, node.getNodeIP(), json.getString("address").toString());
-			case PRED:
 				break;
+				
+			case PRED_REQ:
+				node.createJSON(Command.PRED_RES, currentSender, originalSender, node.getPredecessor().getHostAddress());
+				break;
+
+			case PRED_RES:
+				node.setSuccPred(InetAddress.getByName(json.get("address").toString()));
+
+				synchronized(node) {
+					node.notifyAll();
+				}
+				break;
+
 			case NOTIFY:
 				break;
 			}
-			
+
 			in.close();
 			socket.close();
 		} catch (IOException | NoSuchAlgorithmException | JSONException e) {

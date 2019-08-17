@@ -1,7 +1,6 @@
 package node;
 
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.math.BigInteger;
 import java.net.InetAddress;
@@ -14,6 +13,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.LinkedHashMap;
 import java.util.Scanner;
+import java.util.Timer;
 
 import org.json.JSONObject;
 
@@ -47,6 +47,8 @@ public class Node {
 	private InetAddress address;
 	private InetAddress predecessor;
 	private InetAddress successor;
+	
+	private InetAddress succPred;
 
 	private LinkedHashMap<BigInteger, InetAddress> fingerTable = new LinkedHashMap<BigInteger, InetAddress>();
 
@@ -56,7 +58,7 @@ public class Node {
 
 	public Node() throws IOException, NoSuchAlgorithmException{
 
-		address = InetAddress.getLocalHost();
+		address = InetAddress.getByName("192.168.0.107");//InetAddress.getLocalHost();
 		nodeIP = address.getHostAddress();
 		nodeID = evaluateID(nodeIP);
 		m = hash.length * 8;
@@ -87,18 +89,18 @@ public class Node {
 	public void findSuccessor(InetAddress node, String originalSender) throws NoSuchAlgorithmException, IOException {
 		System.out.println(nodeID + " " + evaluateID(successor.getHostAddress()) + " " + evaluateID(closestPrecedingNode(node).getHostAddress()));
 		if(nodeID.compareTo(evaluateID(successor.getHostAddress())) == 0)
-			createJSON(Command.SUCC_RES, originalSender, nodeIP, successor.getHostAddress());
-		if(nodeID.compareTo(evaluateID(successor.getHostAddress())) == 1)
+			createJSON(Command.SUCC_RES, originalSender, originalSender, successor.getHostAddress());
+		else if(nodeID.compareTo(evaluateID(successor.getHostAddress())) == 1) {
 			if((evaluateID(node.getHostAddress()).compareTo(nodeID) == 1
 						&& evaluateID(node.getHostAddress()).compareTo(ringDimension) == -1)
 					|| (evaluateID(node.getHostAddress()).compareTo(BigInteger.valueOf((long) 0)) != -1
 						&& evaluateID(node.getHostAddress()).compareTo(evaluateID(successor.getHostAddress())) != 1))
-				createJSON(Command.SUCC_RES, originalSender, nodeIP, successor.getHostAddress());
-		if(evaluateID(node.getHostAddress()).compareTo(nodeID) == 1
+				createJSON(Command.SUCC_RES, originalSender, originalSender, successor.getHostAddress());
+		} else if(evaluateID(node.getHostAddress()).compareTo(nodeID) == 1
 				&& evaluateID(node.getHostAddress()).compareTo(evaluateID(successor.getHostAddress())) != 1)
-			createJSON(Command.SUCC_RES, originalSender, nodeIP, successor.getHostAddress());
+			createJSON(Command.SUCC_RES, originalSender, originalSender, successor.getHostAddress());
 		else
-			createJSON(Command.SUCC_REQ, originalSender, nodeIP, closestPrecedingNode(node).getHostAddress());
+			createJSON(Command.SUCC_REQ, originalSender, closestPrecedingNode(node).getHostAddress(), null);
 	}
 
 	private InetAddress closestPrecedingNode(InetAddress node) throws UnknownHostException, NoSuchAlgorithmException { //gestire i casi con fingerTable.get(i).getNodeID() == NULL
@@ -135,33 +137,52 @@ public class Node {
 	public void create() throws UnknownHostException {
 		predecessor = address; //con NULL crasha al primo stabilize
 		successor = address;
+		Timer timer = new Timer();
+		Stabilizer stabilizer = new Stabilizer(this);
+		timer.schedule(stabilizer, 0, 5000);
 		System.out.println("Created");
 	}	
 
-	public void join(InetAddress address) throws UnknownHostException, IOException {
+	public void join(InetAddress address) throws UnknownHostException, IOException, InterruptedException {
 		predecessor = null;
 		System.out.println("Trying to join the ring");
 		createJSON(Command.JOIN, this.nodeIP, address.getHostAddress(), null);
+		synchronized(this) {
+			wait();
+		}
+		
+		Timer timer = new Timer();
+		Stabilizer stabilizer = new Stabilizer(this);
+		timer.schedule(stabilizer, 0, 5000);
 	}
 
 	public void leave() throws IOException {
 		serverSocket.close();
 	}
 	
-	/*public void stabilize() {
-		InetAddress node = successor.getPredecessor().getSuccessor();
+	public void stabilize() throws InterruptedException, IOException {
+		//chiedo al mio sucessore chi è il suo predecessore e vado in wait
+		createJSON(Command.PRED_REQ, this.nodeIP, successor.getHostAddress(), null);
+		synchronized(this) {
+			wait();
+		}
+		
+		System.out.println("successor: " + successor + "\npredecessor: " + predecessor + "\nsuccessor predecessor: " + succPred.toString());
+		/*
 		if(nodeID.compareTo(evaluateID(successor.getHostAddress())) == 1)
 			if((evaluateID(node.getHostAddress()).compareTo(nodeID) == 1
 						&& evaluateID(node.getHostAddress()).compareTo(ringDimension) == -1)
 					|| (evaluateID(node.getHostAddress()).compareTo(BigInteger.valueOf((long) 0)) != -1
 						&& evaluateID(node.getHostAddress()).compareTo(evaluateID(successor.getHostAddress())) == -1))
 				successor = node;
+		
 		if(evaluateID(node.getHostAddress()).compareTo(nodeID) == 1
 				&& evaluateID(node.getHostAddress()).compareTo(evaluateID(successor.getHostAddress())) == -1)
 			successor = node;
+		
 		//this.successor.notify(this.address);
-		createJSON(Command.NOTIFY, address);
-	}*/
+		createJSON(Command.NOTIFY, address);*/
+	}
 
 	public void notify(InetAddress node) throws NoSuchAlgorithmException {
 		if(predecessor != null && evaluateID(predecessor.getHostAddress()).compareTo(nodeID) == 1)
@@ -235,8 +256,12 @@ public class Node {
 	public void setSuccessor(InetAddress successor) {
 		this.successor = successor;
 	}
+	
+	public void setSuccPred(InetAddress succPred) {
+		this.succPred = succPred;
+	}
 	 
-	public static void main (String[] args) throws NoSuchAlgorithmException, IOException {
+	public static void main (String[] args) throws NoSuchAlgorithmException, IOException, InterruptedException {
 		Node n1 = new Node();
 		int choice;
 		System.out.println("1. create\n2. join\n");
