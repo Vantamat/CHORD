@@ -49,15 +49,15 @@ public class RequestsHandler implements Runnable{
 				break;
 
 			case SUCC_REQ:
-				System.out.println("Request to find the successor");
+				//System.out.println("Request to find the successor");
 				node.findSuccessor(InetAddress.getByName(currentSender), originalSender);
 				break;
 
 			case SUCC_RES:
-				System.out.println("Successor found: " + currentSender);
+				//System.out.println("Successor found: " + currentSender);
 				if(originalSender.compareTo(node.getNodeIP()) == 0) {
 					node.setSuccessor(InetAddress.getByName(json.getString("address").toString()));
-					System.out.println("Scuccessor changed");
+					//System.out.println("Scuccessor changed");
 					
 					synchronized(node) {
 						node.notifyAll();

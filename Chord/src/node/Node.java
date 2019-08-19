@@ -56,7 +56,7 @@ public class Node {
 
 	public Node() throws IOException, NoSuchAlgorithmException{
 
-		address = InetAddress.getLocalHost();
+		address = InetAddress.getByName("192.168.43.151");//InetAddress.getLocalHost();
 		nodeIP = address.getHostAddress();
 		nodeID = evaluateID(nodeIP);
 		m = hash.length * 8;
@@ -92,7 +92,7 @@ public class Node {
 		 * 		node:
 		 * 		originalSender:
 		 */
-		System.out.println(nodeID + " " + evaluateID(successor.getHostAddress()) + " " + evaluateID(closestPrecedingNode(node).getHostAddress()));
+		//System.out.println(nodeID + " " + evaluateID(successor.getHostAddress()) + " " + evaluateID(closestPrecedingNode(node).getHostAddress()));
 		if(nodeID.compareTo(evaluateID(successor.getHostAddress())) == 0)
 			createJSON(Command.SUCC_RES, originalSender, originalSender, successor.getHostAddress());
 		else if(nodeID.compareTo(evaluateID(successor.getHostAddress())) == 1) {
@@ -172,6 +172,7 @@ public class Node {
 		predecessor = null;
 		System.out.println("Trying to join the ring");
 		createJSON(Command.JOIN, this.nodeIP, address.getHostAddress(), null);
+		
 		synchronized(this) {
 			wait();
 		}
@@ -185,12 +186,12 @@ public class Node {
 	}
 
 	public void stabilize() throws InterruptedException, IOException, NoSuchAlgorithmException {
-		//chiedo al mio sucessore chi è il suo predecessore e vado in wait
+		//chiedo al mio sucessore chi ï¿½ il suo predecessore e vado in wait
 		createJSON(Command.PRED_REQ, this.nodeIP, successor.getHostAddress(), null);
 
 		synchronized(this) {
 			wait();
-			//ricevuto in notify succPred è stato aggiornato
+			//ricevuto in notify succPred ï¿½ stato aggiornato
 		}
 		
 		//myID > succID && (succPredID > myID || succPredID < succID)
@@ -220,7 +221,6 @@ public class Node {
 			predecessor = node;
 		
 		//predID > myID && (nodeID < myID || nodeID > predID)
-		
 		else if(evaluateID(predecessor.getHostAddress()).compareTo(nodeID) == 1 &&
 				(evaluateID(node.getHostAddress()).compareTo(nodeID) == -1 ||
 				evaluateID(node.getHostAddress()).compareTo(evaluateID(predecessor.getHostAddress())) == 1)) 
