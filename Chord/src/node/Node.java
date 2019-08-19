@@ -195,7 +195,7 @@ public class Node {
 		
 		//myID > succID && (succPredID > myID || succPredID < succID)
 		if(nodeID.compareTo(evaluateID(successor.getHostAddress())) == 1 &&
-				(evaluateID(succPred.getHostAddress()).compareTo(nodeID) == 1 || 
+				(evaluateID(succPred.getHostAddress()).compareTo(nodeID) != -1 || 
 				evaluateID(succPred.getHostAddress()).compareTo(evaluateID(successor.getHostAddress())) == -1)) 
 		{
 			System.out.println("____________CASO 1");
@@ -205,7 +205,7 @@ public class Node {
 		//succID > myID && myID < succPredID < succID
 		else if(evaluateID(successor.getHostAddress()).compareTo(nodeID) == 1 && 
 				evaluateID(succPred.getHostAddress()).compareTo(evaluateID(successor.getHostAddress())) == -1 &&
-				evaluateID(succPred.getHostAddress()).compareTo(nodeID) == -1) 
+				evaluateID(succPred.getHostAddress()).compareTo(nodeID) != -1) 
 		{
 			System.out.println("____________CASO 2");
 			successor = succPred;
@@ -238,7 +238,7 @@ public class Node {
 			predecessor = node;
 		}
 		
-		*/if(predecessor != null && evaluateID(predecessor.getHostAddress()).compareTo(nodeID) == 1)
+		*/if(predecessor != null && evaluateID(predecessor.getHostAddress()).compareTo(nodeID) != -1)
 			if((evaluateID(node.getHostAddress()).compareTo(evaluateID(successor.getHostAddress())) == 1
 			&& evaluateID(node.getHostAddress()).compareTo(ringDimension) == -1)
 					|| (evaluateID(node.getHostAddress()).compareTo(BigInteger.valueOf((long) 0)) != -1
@@ -247,6 +247,8 @@ public class Node {
 		if(predecessor == null
 				|| (evaluateID(node.getHostAddress()).compareTo(evaluateID(predecessor.getHostAddress())) == 1
 				&& evaluateID(node.getHostAddress()).compareTo(nodeID) == -1))
+			predecessor = node;
+		if(evaluateID(predecessor.getHostAddress()).compareTo(nodeID) == 1)
 			predecessor = node;
 		
 		System.out.println("\nsuccessor: " + successor + "\npredecessor: " + predecessor + "\nsuccessor predecessor: " + succPred + "\n");
