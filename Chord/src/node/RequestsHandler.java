@@ -32,17 +32,17 @@ public class RequestsHandler implements Runnable{
 	@Override
 	public void run() {
 		try {
-			System.out.println("Connection recived, handling request...");
 			Scanner in = new Scanner(socket.getInputStream());
 			String j = in.nextLine();
 			JSONObject json = new JSONObject(j);
-			//System.out.println(j);
 			String originalSender = json.get("original_sender").toString();
 			String currentSender = json.get("current_sender").toString();
+			
+			System.out.println(json.get("op_code") + " from " + originalSender);
 
 			switch(Command.valueOf((String) json.get("op_code"))) {
 			case JOIN:
-				System.out.println("Attempt to join " + currentSender);
+				//System.out.println("Attempt to join " + currentSender);
 				//if(string.charAt(0)=='/')
 				//string = string.substring(1, string.length());
 				node.findSuccessor(InetAddress.getByName(currentSender), originalSender);
@@ -69,18 +69,27 @@ public class RequestsHandler implements Runnable{
 				break;
 				
 			case PRED_REQ:
-				node.createJSON(Command.PRED_RES, currentSender, originalSender, node.getPredecessor().getHostAddress());
+				InetAddress temp = node.getPredecessor();
+				if(temp == null) 
+					node.createJSON(Command.PRED_RES, currentSender, originalSender, null);
+				else
+					node.createJSON(Command.PRED_RES, currentSender, originalSender, temp.getHostAddress());
 				break;
 
 			case PRED_RES:
-				node.setSuccPred(InetAddress.getByName(json.get("address").toString()));
+				if (json.isNull("address"))
+					node.setSuccPred(null);
+				else
+					node.setSuccPred(InetAddress.getByName(json.get("address").toString()));
 
 				synchronized(node) {
 					node.notifyAll();
 				}
+				
 				break;
 
 			case NOTIFY:
+				node.notify(InetAddress.getByName(originalSender));
 				break;
 			}
 

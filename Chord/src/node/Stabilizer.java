@@ -1,6 +1,7 @@
 package node;
 
 import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 import java.util.TimerTask;
 
 public class Stabilizer extends TimerTask{
@@ -13,7 +14,7 @@ public class Stabilizer extends TimerTask{
 	public void run() {
 		try {
 			node.stabilize();
-		} catch (InterruptedException | IOException e) {
+		} catch (InterruptedException | IOException | NoSuchAlgorithmException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
