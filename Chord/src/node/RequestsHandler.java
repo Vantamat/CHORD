@@ -38,7 +38,7 @@ public class RequestsHandler implements Runnable{
 			String originalSender = json.get("original_sender").toString();
 			String currentSender = json.get("current_sender").toString();
 			
-			System.out.println(json.get("op_code") + " from " + originalSender);
+			System.out.println(json.get("op_code") + " from " + currentSender + " to " + node.getNodeIP());
 
 			switch(Command.valueOf((String) json.get("op_code"))) {
 			case JOIN:
@@ -71,15 +71,13 @@ public class RequestsHandler implements Runnable{
 			case PRED_REQ:
 				InetAddress temp = node.getPredecessor();
 				if(temp == null) 
-					node.createJSON(Command.PRED_RES, currentSender, originalSender, null);
+					node.createJSON(Command.PRED_RES, originalSender, originalSender, null);
 				else
-					node.createJSON(Command.PRED_RES, currentSender, originalSender, temp.getHostAddress());
+					node.createJSON(Command.PRED_RES, originalSender, originalSender, temp.getHostAddress());
 				break;
 
 			case PRED_RES:
-				if (json.isNull("address"))
-					node.setSuccPred(null);
-				else
+				if (!json.isNull("address"))
 					node.setSuccPred(InetAddress.getByName(json.get("address").toString()));
 
 				synchronized(node) {

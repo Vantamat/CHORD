@@ -56,7 +56,7 @@ public class Node {
 
 	public Node() throws IOException, NoSuchAlgorithmException{
 
-		address = InetAddress.getByName("192.168.43.151");//InetAddress.getLocalHost();
+		address = InetAddress.getLocalHost();
 		nodeIP = address.getHostAddress();
 		nodeID = evaluateID(nodeIP);
 		m = hash.length * 8;
@@ -74,7 +74,7 @@ public class Node {
 		}
 		 */
 
-		//printNodeInformation();
+		printNodeInformation();
 
 		port = 6007;
 		serverSocket = new ServerSocket();
@@ -175,7 +175,6 @@ public class Node {
 		synchronized(this) {
 			wait();
 		}
-
 		Timer timer = new Timer();
 		Stabilizer stabilizer = new Stabilizer(this);
 		timer.schedule(stabilizer, 0, 10000);
@@ -186,12 +185,12 @@ public class Node {
 	}
 
 	public void stabilize() throws InterruptedException, IOException, NoSuchAlgorithmException {
-		//chiedo al mio sucessore chi ï¿½ il suo predecessore e vado in wait
+		//chiedo al mio sucessore chi è il suo predecessore e vado in wait
 		createJSON(Command.PRED_REQ, this.nodeIP, successor.getHostAddress(), null);
 
 		synchronized(this) {
 			wait();
-			//ricevuto in notify succPred ï¿½ stato aggiornato
+			//ricevuto in notify succPred è stato aggiornato
 		}
 		
 		//myID > succID && (succPredID > myID || succPredID < succID)
@@ -199,6 +198,7 @@ public class Node {
 				(evaluateID(succPred.getHostAddress()).compareTo(nodeID) == 1 || 
 				evaluateID(succPred.getHostAddress()).compareTo(evaluateID(successor.getHostAddress())) == -1)) 
 		{
+			System.out.println("____________CASO 1");
 			successor = succPred;
 		}
 		
@@ -207,24 +207,25 @@ public class Node {
 				evaluateID(succPred.getHostAddress()).compareTo(evaluateID(successor.getHostAddress())) == -1 &&
 				evaluateID(succPred.getHostAddress()).compareTo(nodeID) == -1) 
 		{
+			System.out.println("____________CASO 2");
 			successor = succPred;
 		}
-
-		System.out.println("\nsuccessor: " + successor + "\npredecessor: " + predecessor + "\nsuccessor predecessor: " + succPred + "\n");
 		
 		createJSON(Command.NOTIFY, nodeIP, successor.getHostAddress(), null);
 	}
 	
 	
 	public void notify(InetAddress node) throws NoSuchAlgorithmException {
-		if(predecessor == null)
+		/*if(predecessor == null)
 			predecessor = node;
 		
 		//predID > myID && (nodeID < myID || nodeID > predID)
+		
 		else if(evaluateID(predecessor.getHostAddress()).compareTo(nodeID) == 1 &&
 				(evaluateID(node.getHostAddress()).compareTo(nodeID) == -1 ||
 				evaluateID(node.getHostAddress()).compareTo(evaluateID(predecessor.getHostAddress())) == 1)) 
 		{
+			System.out.println("_______NOTIFY CASO 1");
 			predecessor = node;
 		}
 		
@@ -233,10 +234,11 @@ public class Node {
 				evaluateID(node.getHostAddress()).compareTo(nodeID) == -1 &&
 				evaluateID(node.getHostAddress()).compareTo(evaluateID(predecessor.getHostAddress())) == 1) 
 		{
+			System.out.println("____________NOTIFY CASO 2");
 			predecessor = node;
 		}
 		
-		/*if(predecessor != null && evaluateID(predecessor.getHostAddress()).compareTo(nodeID) == 1)
+		*/if(predecessor != null && evaluateID(predecessor.getHostAddress()).compareTo(nodeID) == 1)
 			if((evaluateID(node.getHostAddress()).compareTo(evaluateID(successor.getHostAddress())) == 1
 			&& evaluateID(node.getHostAddress()).compareTo(ringDimension) == -1)
 					|| (evaluateID(node.getHostAddress()).compareTo(BigInteger.valueOf((long) 0)) != -1
@@ -245,7 +247,9 @@ public class Node {
 		if(predecessor == null
 				|| (evaluateID(node.getHostAddress()).compareTo(evaluateID(predecessor.getHostAddress())) == 1
 				&& evaluateID(node.getHostAddress()).compareTo(nodeID) == -1))
-			predecessor = node;*/
+			predecessor = node;
+		
+		System.out.println("\nsuccessor: " + successor + "\npredecessor: " + predecessor + "\nsuccessor predecessor: " + succPred + "\n");
 	}
 
 	public void fixFingers() {
