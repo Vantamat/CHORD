@@ -18,7 +18,7 @@ public class RequestsHandler implements Runnable{
 	private Socket socket;
 	private Node node;
 	/**
-	 * @param socket: la socket che dovrà essere utilizzata per comunicare con il nodo che ha richiesto la connessione
+	 * @param socket: la socket che dovrï¿½ essere utilizzata per comunicare con il nodo che ha richiesto la connessione
 	 */
 	public RequestsHandler(Socket socket, Node node) {
 		this.socket = socket;
@@ -26,8 +26,8 @@ public class RequestsHandler implements Runnable{
 	}
 
 	/**
-	 * in questo run il nodo resterà in ascolto dei messaggi provenienti dal nodo che ha aperto la comunicazione, da quest'ultimo 
-	 * riceverà delle stringhe (enum?) ed in base al loro valore verranno eseguite diverse operazioni
+	 * in questo run il nodo resterï¿½ in ascolto dei messaggi provenienti dal nodo che ha aperto la comunicazione, da quest'ultimo 
+	 * riceverï¿½ delle stringhe (enum?) ed in base al loro valore verranno eseguite diverse operazioni
 	 */
 	@Override
 	public void run() {
@@ -44,7 +44,7 @@ public class RequestsHandler implements Runnable{
 			case JOIN:
 				System.out.println("Attempt to join " + currentSender);
 				//if(string.charAt(0)=='/')
-				//string = string.substring(1, string.length());
+					//string = string.substring(1, string.length());
 				node.findSuccessor(InetAddress.getByName(currentSender), originalSender);
 				break;
 

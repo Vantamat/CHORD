@@ -19,22 +19,20 @@ import org.json.JSONObject;
 
 
 public class Node {
-
 	/* 
-	 * Args:
-	 *		nodeIP:
-	 *		nodeID:
-	 *		m:
-	 *		hash:
-	 *		ringDimension:
-	 *		digest:
-	 *		address:
-	 *		predecessor:
-	 *		successor:
-	 *		fingerTable:
-	 *	 	port:
+	 *		nodeIP: IP address of the node represented as a string
+	 *		nodeID: node identifier into the ring
+	 *		m: number of bits of the node identifier
+	 *		hash: output of the hash function
+	 *		ringDimension: max number of nodes in the ring
+	 *		digest: implementation of the specified algorithm
+	 *		address: IP address of the current node
+	 *		predecessor: IP address of the node predecessor
+	 *		successor: IP address of the node successor
+	 *		fingerTable: routing table with m entries
+	 *	 	port: node port represented as an integer, fixed to 6007
 	 *		serverSocket:
-	 *		Listener:
+	 *		listener:
 	 */
 	private String nodeIP;
 	private BigInteger nodeID;
@@ -69,14 +67,14 @@ public class Node {
 			InetAddress entryValue = null;
 			fingerTable.put(entryKey, entryValue);
 		}		
-		System.out.println("nodeIP\t" + nodeIP + "\nm\t" + m + "\nnodeID\t" + nodeID + "\n" + digest.toString());
+		//System.out.println("nodeIP:\t" + nodeIP + "\nm:\t" + m + "\nnodeID:\t" + nodeID + "\n" + digest.toString());
 		/*
 		for (BigInteger key: fingerTable.keySet()) {
             System.out.println(key + "\t" + fingerTable.get(key));
 		}
 		 */
 		
-		//printNodeInformation();
+		printNodeInformation();
 		
 		port = 6007;
 		serverSocket = new ServerSocket();
@@ -87,6 +85,13 @@ public class Node {
 	}
 
 	public void findSuccessor(InetAddress node, String originalSender) throws NoSuchAlgorithmException, IOException {
+		/*
+		 * 
+		 * 
+		 * Args:
+		 * 		node:
+		 * 		originalSender:
+		 */
 		System.out.println(nodeID + " " + evaluateID(successor.getHostAddress()) + " " + evaluateID(closestPrecedingNode(node).getHostAddress()));
 		if(nodeID.compareTo(evaluateID(successor.getHostAddress())) == 0)
 			createJSON(Command.SUCC_RES, originalSender, originalSender, successor.getHostAddress());
@@ -118,8 +123,17 @@ public class Node {
 		}
 		return address;
 	}	 
-	
+	//address ï¿½ l'indirizzo trovato da inoltrare a chi ha fatto richiesta
 	public void createJSON(Command command, String originalSender, String receiver, String address) throws IOException {
+		/*
+		 * 
+		 * 
+		 * Args:
+		 * 		command: tag that define the command to execute
+		 * 		originalSender: IP of the node that originally send the request
+		 * 		receiver: IP of the node that receive the request
+		 * 		address: the node identifier found to forward to the request sender
+		 */
 		Socket socket = new Socket(receiver, port);
 		PrintStream out = new PrintStream(socket.getOutputStream());
 		JSONObject json = new JSONObject();
@@ -135,12 +149,15 @@ public class Node {
 	}
 	
 	public void create() throws UnknownHostException {
+		/*
+		 * Initializes a new ring
+		 */
 		predecessor = address; //con NULL crasha al primo stabilize
 		successor = address;
 		Timer timer = new Timer();
 		Stabilizer stabilizer = new Stabilizer(this);
 		timer.schedule(stabilizer, 0, 5000);
-		System.out.println("Created");
+		System.out.println("New ring created.");
 	}	
 
 	public void join(InetAddress address) throws UnknownHostException, IOException, InterruptedException {
@@ -161,7 +178,7 @@ public class Node {
 	}
 	
 	public void stabilize() throws InterruptedException, IOException {
-		//chiedo al mio sucessore chi è il suo predecessore e vado in wait
+		//chiedo al mio sucessore chi ï¿½ il suo predecessore e vado in wait
 		createJSON(Command.PRED_REQ, this.nodeIP, successor.getHostAddress(), null);
 		synchronized(this) {
 			wait();
@@ -209,12 +226,13 @@ public class Node {
 	private BigInteger evaluateID(String nodeIP) throws NoSuchAlgorithmException {
 		digest = MessageDigest.getInstance("SHA-1");
 		hash = digest.digest(nodeIP.getBytes(StandardCharsets.UTF_8));
+		//System.out.println(hash);
 		
 		return new BigInteger(1, hash);
 	}
 	
 	private void printNodeInformation() throws NoSuchAlgorithmException {
-		System.out.println("Node IP\t\t" + nodeIP + "\nID dimension\t" + m + "\nNode ID\t\t" + nodeID + "\n" + digest.toString());
+		System.out.println("NodeIP:\t" + nodeIP + "\nm:\t" + m + "\nNodeID:\t" + nodeID + "\n" + digest.toString());
 		if(successor != null)
 			System.out.println("Successor ID\t\t" + evaluateID(successor.getHostAddress()));
 		if(predecessor != null)
@@ -274,10 +292,11 @@ public class Node {
 		case 2:
 			System.out.println("IP to join: ");
 			n1.join(InetAddress.getByName(stdin.nextLine()));
+			stdin.close();
 			break;
 		}
 		//Node n2 = new Node();
-		//Node n2 = new Node();1
+		//Node n2 = new Node();
 		//n1.create();
 		//n2.join(n1);
 		//n2.setNodeID(n2.getNodeID().add(BigInteger.valueOf((long) 1)));
