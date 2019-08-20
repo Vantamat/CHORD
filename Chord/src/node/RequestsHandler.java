@@ -57,7 +57,7 @@ public class RequestsHandler implements Runnable{
 				//System.out.println("Successor found: " + currentSender);
 				if(originalSender.compareTo(node.getNodeIP()) == 0) {
 					node.setSuccessor(InetAddress.getByName(json.getString("address").toString()));
-					//System.out.println("Scuccessor changed");
+					//System.out.println("Successor changed");
 					
 					synchronized(node) {
 						node.notifyAll();
