@@ -1,6 +1,5 @@
 package node;
 
-import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.TimerTask;
 
@@ -14,10 +13,9 @@ public class PredecessorChecker extends TimerTask{
 	public void run() {
 		try {
 			node.checkPredecessor();
-		} catch (IOException | NoSuchAlgorithmException e) {
+		} catch (NoSuchAlgorithmException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		//System.out.println("Predecessor: " + node.getPredecessor() + "\nSuccessor: " + node.getSuccessor());
 	}
 }

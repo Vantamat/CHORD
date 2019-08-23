@@ -1,10 +1,10 @@
 package node;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.security.NoSuchAlgorithmException;
-import java.text.ParseException;
 import java.util.Scanner;
 
 import org.json.JSONException;
@@ -35,9 +35,9 @@ public class RequestsHandler implements Runnable{
 			Scanner in = new Scanner(socket.getInputStream());
 			String j = in.nextLine();
 			JSONObject json = new JSONObject(j);
-			String originalSender = json.get("original_sender").toString();
-			String currentSender = json.get("current_sender").toString();
-			
+			String originalSender = json.getString("original_sender");
+			String currentSender = json.getString("current_sender");
+			BigInteger senderID;
 			System.out.println(json.get("op_code") + " from " + currentSender + " to " + node.getNodeIP());
 
 			switch(Command.valueOf((String) json.get("op_code"))) {
@@ -45,27 +45,28 @@ public class RequestsHandler implements Runnable{
 				//System.out.println("Attempt to join " + currentSender);
 				//if(string.charAt(0)=='/')
 					//string = string.substring(1, string.length());
-				node.findSuccessor(InetAddress.getByName(currentSender), originalSender);
+				senderID = node.evaluateID(currentSender);
+				node.createJSON(Command.SUCC_RES, originalSender, originalSender, node.findSuccessor(senderID, originalSender, null).getHostAddress());
 				break;
 
 			case SUCC_REQ:
 				//System.out.println("Request to find the successor");
-				node.findSuccessor(InetAddress.getByName(currentSender), originalSender);
+				senderID = node.evaluateID(currentSender);
+				if(json.isNull("address"))
+					node.createJSON(Command.SUCC_RES, originalSender, originalSender, node.findSuccessor(senderID, originalSender, null).getHostAddress());
+				else
+					node.createJSON(Command.FIX_RES, originalSender, originalSender, node.findSuccessor(senderID, originalSender, json.getString("address")).getHostAddress());
 				break;
 
 			case SUCC_RES:
-				//System.out.println("Successor found: " + currentSender);
-				if(originalSender.compareTo(node.getNodeIP()) == 0) {
-					node.setSuccessor(InetAddress.getByName(json.getString("address").toString()));
-					//System.out.println("Successor changed");
-					
-					synchronized(node) {
-						node.notifyAll();
-					}
-					
+				node.setSuccessor(InetAddress.getByName(json.getString("address")));
+				synchronized(node) {
+					node.notifyAll();
 				}
-				else
-					node.createJSON(Command.SUCC_RES, originalSender, node.getNodeIP(), json.getString("address").toString());
+				break;
+				
+			case FIX_RES:
+				node.setFinger(InetAddress.getByName(json.getString("address")));
 				break;
 				
 			case PRED_REQ:
@@ -88,6 +89,9 @@ public class RequestsHandler implements Runnable{
 
 			case NOTIFY:
 				node.notify(InetAddress.getByName(originalSender));
+				break;
+			
+			default:
 				break;
 			}
 
