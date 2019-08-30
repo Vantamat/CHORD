@@ -46,16 +46,29 @@ public class RequestsHandler implements Runnable{
 				//if(string.charAt(0)=='/')
 					//string = string.substring(1, string.length());
 				senderID = node.evaluateID(currentSender);
-				node.createJSON(Command.SUCC_RES, originalSender, originalSender, node.findSuccessor(senderID, originalSender, null).getHostAddress());
+				try {
+					node.createJSON(Command.SUCC_RES, originalSender, originalSender, node.findSuccessor(senderID, originalSender, null).getHostAddress());
+				}catch(NullPointerException e) {
+					node.createJSON(Command.SUCC_REQ, originalSender, node.closestPrecedingNode(node.getNodeID()).getHostAddress(), null);
+				}
 				break;
 
 			case SUCC_REQ:
 				//System.out.println("Request to find the successor");
 				senderID = node.evaluateID(currentSender);
 				if(json.isNull("address"))
-					node.createJSON(Command.SUCC_RES, originalSender, originalSender, node.findSuccessor(senderID, originalSender, null).getHostAddress());
+					//node.createJSON(Command.SUCC_RES, originalSender, originalSender, node.findSuccessor(senderID, originalSender, null).getHostAddress());
+					try {
+						node.createJSON(Command.SUCC_RES, originalSender, originalSender, node.findSuccessor(senderID, originalSender, null).getHostAddress());
+					}catch(NullPointerException e) {
+						node.createJSON(Command.SUCC_REQ, originalSender, node.closestPrecedingNode(node.getNodeID()).getHostAddress(), null);
+					}
 				else
-					node.createJSON(Command.FIX_RES, originalSender, originalSender, node.findSuccessor(senderID, originalSender, json.getString("address")).getHostAddress());
+					try {
+						node.createJSON(Command.FIX_RES, originalSender, originalSender, node.findSuccessor(senderID, originalSender, json.getString("address")).getHostAddress());
+					} catch (NullPointerException e) {
+						node.createJSON(Command.SUCC_REQ, originalSender, node.closestPrecedingNode(node.getNodeID()).getHostAddress(), json.getString("address"));
+					}
 				break;
 
 			case SUCC_RES:

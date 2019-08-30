@@ -57,7 +57,7 @@ public class Node {
 
 	public Node() throws IOException, NoSuchAlgorithmException{
 
-		address = InetAddress.getLocalHost();
+		address = InetAddress.getByName("192.168.43.151");//InetAddress.getLocalHost();
 		nodeIP = address.getHostAddress();
 		nodeID = evaluateID(nodeIP);
 		m = hash.length * 8;
@@ -70,8 +70,8 @@ public class Node {
 		
 		for(int i = 0; i < m; i++) {
 			BigInteger entryKey = nodeID.add(BigInteger.valueOf((long) 2).pow(i)).mod(ringDimension);
-			InetAddress entryValue = null;
-			fingerTable.put(entryKey, entryValue);
+			//InetAddress entryValue = null;
+			fingerTable.put(entryKey, address);
 		}		
 		//System.out.println("nodeIP:\t" + nodeIP + "\nm:\t" + m + "\nnodeID:\t" + nodeID + "\n" + digest.toString());
 		
@@ -104,37 +104,39 @@ public class Node {
 			return successor;
 			//createJSON(Command.SUCC_RES, originalSender, originalSender, successor.getHostAddress());
 		else {
-			if(closestPrecedingNode(node).equals(address)) {
+			/*if(closestPrecedingNode(node).equals(address) || fingerTable.get(nodeID.add(BigInteger.valueOf((long) 2).pow(next-1)).mod(ringDimension)).equals(address)) {
 				System.out.println("CASO A " + closestPrecedingNode(node).getHostAddress());
 				return address;
 			}
-			else {
-				createJSON(Command.SUCC_REQ, originalSender, closestPrecedingNode(node).getHostAddress(), fixTag);
-				System.out.println("CASO B");
+			else {*/
 				return null;
-			}
+				/*System.out.println("CASO B");
+				if(fingerTable.get(node) == null)//fixTag == null)
+					return closestPrecedingNode(node);
+				else
+					return closestPrecedingNode(node);//fingerTable.get(node);//nodeID.add(BigInteger.valueOf((long) 2).pow(next-1)).mod(ringDimension));*/
+			//}
 		}
 	}
 
-	private InetAddress closestPrecedingNode(BigInteger node) throws UnknownHostException, NoSuchAlgorithmException {
+	public InetAddress closestPrecedingNode(BigInteger node) throws UnknownHostException, NoSuchAlgorithmException {
+		BigInteger entryKey;
 		for(int i = m; i > 0; i--) {
-			if(fingerTable.get(i) != null) {
+			entryKey = nodeID.add(BigInteger.valueOf((long) 2).pow(i-1)).mod(ringDimension);
+			if(fingerTable.get(entryKey) != null) {
 				//myID > nodeID && (fingerID[i] > myID || fingerID[i] < nodeID)
 				if(nodeID.compareTo(node) == 1
-					&& (evaluateID(fingerTable.get(i).getHostAddress()).compareTo(nodeID) == 1
-							|| evaluateID(fingerTable.get(i).getHostAddress()).compareTo(node) == -1)) {
-						System.out.println("CLOSEST A " + node + "\n" + fingerTable.get(i) + "\n" + nodeID);
-						return fingerTable.get(i);
+					&& (evaluateID(fingerTable.get(entryKey).getHostAddress()).compareTo(nodeID) == 1
+							|| evaluateID(fingerTable.get(entryKey).getHostAddress()).compareTo(node) == -1)) {
+						return fingerTable.get(entryKey);
 				}
 				//fingerID[i] > myID && fingerID[i] < nodeID
-				else if(evaluateID(fingerTable.get(i).getHostAddress()).compareTo(nodeID) == 1
-						&& evaluateID(fingerTable.get(i).getHostAddress()).compareTo(node) == -1) {
-					System.out.println("CLOSEST B " + node + "\n" + fingerTable.get(i) + "\n" + nodeID);
-					return fingerTable.get(i);
+				else if(evaluateID(fingerTable.get(entryKey).getHostAddress()).compareTo(nodeID) == 1
+						&& evaluateID(fingerTable.get(entryKey).getHostAddress()).compareTo(node) == -1) {
+					return fingerTable.get(entryKey);
 				}
 			}
 		}
-		System.out.println("CLOSEST C " + node + "\n" + address + "\n" + nodeID);
 		return address;
 	}	 
 
@@ -182,7 +184,7 @@ public class Node {
 		PredecessorChecker checker = new PredecessorChecker(this);
 		timer.schedule(checker, 0, 5000);
 		Fixer fixer = new Fixer(this);
-		timer.schedule(fixer, 0, 200);
+		timer.schedule(fixer, 0, 100);
 		System.out.println("Created");
 	}	
 
@@ -190,17 +192,18 @@ public class Node {
 		predecessor = null;
 		System.out.println("Trying to join the ring");
 		createJSON(Command.JOIN, this.nodeIP, address.getHostAddress(), null);
-		
+
 		synchronized(this) {
 			wait();
 		}
+
 		Timer timer = new Timer();
 		Stabilizer stabilizer = new Stabilizer(this);
-		timer.schedule(stabilizer, 0, 10000);
-		PredecessorChecker checker = new PredecessorChecker(this);
-		timer.schedule(checker, 0, 5000);
 		Fixer fixer = new Fixer(this);
-		timer.schedule(fixer, 0, 200);
+		PredecessorChecker checker = new PredecessorChecker(this);
+		timer.schedule(stabilizer, 0, 10000);
+		timer.schedule(checker, 0, 5000);
+		timer.schedule(fixer, 0, 100);
 		
 	}
 
@@ -216,7 +219,7 @@ public class Node {
 			wait();
 			//ricevuto in notify succPred e' stato aggiornato
 		}
-		
+
 		//myID > succID && (succPredID > myID || succPredID < succID)
 		if(nodeID.compareTo(evaluateID(successor.getHostAddress())) == 1 &&
 				(evaluateID(succPred.getHostAddress()).compareTo(nodeID) == 1 || 
@@ -224,7 +227,7 @@ public class Node {
 		{
 			successor = succPred;
 		}
-		
+
 		//succID > myID && myID < succPredID < succID
 		else if(evaluateID(successor.getHostAddress()).compareTo(nodeID) == 1 && 
 				evaluateID(succPred.getHostAddress()).compareTo(evaluateID(successor.getHostAddress())) == -1 &&
@@ -239,27 +242,27 @@ public class Node {
 		printNodeInformation();
 		createJSON(Command.NOTIFY, nodeIP, successor.getHostAddress(), null);
 	}
-	
-	
-	public void notify(InetAddress node) throws NoSuchAlgorithmException {
+
+
+	public synchronized void notify(InetAddress node) throws NoSuchAlgorithmException {
 		if(predecessor == null)
 			predecessor = node;
-		
+
 		//predID > myID && (nodeID < myID || nodeID > predID)
 		else if(evaluateID(predecessor.getHostAddress()).compareTo(nodeID) == 1 &&
 				(evaluateID(node.getHostAddress()).compareTo(nodeID) == -1 ||
 				evaluateID(node.getHostAddress()).compareTo(evaluateID(predecessor.getHostAddress())) == 1)) 
 			predecessor = node;
-		
+
 		//predID < myID && nodeID < myID && nodeID > predID
 		else if(evaluateID(predecessor.getHostAddress()).compareTo(nodeID) ==  -1 &&
 				evaluateID(node.getHostAddress()).compareTo(nodeID) == -1 &&
 				evaluateID(node.getHostAddress()).compareTo(evaluateID(predecessor.getHostAddress())) == 1) 
 			predecessor = node;
-		
+
 		else if(evaluateID(predecessor.getHostAddress()).compareTo(nodeID) ==  0)
 			predecessor = node;
-		printNodeInformation();
+		//printNodeInformation();
 	}
 
 	public void fixFingers() throws NoSuchAlgorithmException, IOException {
@@ -267,21 +270,26 @@ public class Node {
 		if(next > m)
 			next = 1;
 		BigInteger entryKey = nodeID.add(BigInteger.valueOf((long) 2).pow(next-1)).mod(ringDimension);
-		fingerTable.replace(entryKey, findSuccessor(entryKey, nodeIP, "fix"));
+		InetAddress t = findSuccessor(entryKey, nodeIP, "fix");
+		if(t == null)
+			createJSON(Command.SUCC_REQ, nodeIP, closestPrecedingNode(entryKey).getHostAddress(), "fix");
+		else
+			fingerTable.replace(entryKey, t);
+		//System.out.println("myID\n" + nodeID + "\nactual\n" + entryKey + "\nreturned\n" + evaluateID(t.getHostAddress()));
+		
 		//findSuccessor(entryKey, nodeIP, "fix");
 		//System.out.println("FIX FINGERS");
 		//printNodeInformation();
 	}
 
-	public void checkPredecessor() throws NoSuchAlgorithmException {
+	public synchronized void checkPredecessor() throws NoSuchAlgorithmException {
 		if(predecessor != null)
 			try {
 				createJSON(Command.CHECK, nodeIP, predecessor.getHostAddress(), null);
 			} catch(IOException e) {
 				predecessor = null;
 			}
-		System.out.println("CHECK PREDECESSOR");
-		printNodeInformation();
+		//printNodeInformation();
 	}
 
 	/**
@@ -293,8 +301,7 @@ public class Node {
 		return new BigInteger(1, hash);
 	}
 
-	public void setFinger(InetAddress entryValue) {
-		System.out.println("MODIFICO FINGER TABLE");
+	public synchronized void setFinger(InetAddress entryValue) {
 		BigInteger entryKey = nodeID.add(BigInteger.valueOf((long) 2).pow(next)).mod(ringDimension);
 		fingerTable.replace(entryKey, entryValue);
 	}
@@ -314,9 +321,8 @@ public class Node {
 		else
 			System.out.println("SuccPredecessorID:\tnull");
 		System.out.println("________________________________________________________________________");
-		int i = 0;
 		for (BigInteger key: fingerTable.keySet())
-				System.out.println(key + "\t" + fingerTable.get(key));
+				System.out.format("%49s%32s\n", key, fingerTable.get(key));
 		System.out.println("________________________________________________________________________");
 
 	}
