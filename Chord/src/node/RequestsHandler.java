@@ -42,9 +42,6 @@ public class RequestsHandler implements Runnable{
 
 			switch(Command.valueOf((String) json.get("op_code"))) {
 			case JOIN:
-				//System.out.println("Attempt to join " + currentSender);
-				//if(string.charAt(0)=='/')
-					//string = string.substring(1, string.length());
 				senderID = node.evaluateID(currentSender);
 				try {
 					node.createJSON(Command.SUCC_RES, originalSender, originalSender, node.findSuccessor(senderID, originalSender, null).getHostAddress());
@@ -54,7 +51,6 @@ public class RequestsHandler implements Runnable{
 				break;
 
 			case SUCC_REQ:
-				//System.out.println("Request to find the successor");
 				senderID = node.evaluateID(currentSender);
 				if(json.isNull("address"))
 					//node.createJSON(Command.SUCC_RES, originalSender, originalSender, node.findSuccessor(senderID, originalSender, null).getHostAddress());
@@ -84,10 +80,11 @@ public class RequestsHandler implements Runnable{
 				
 			case PRED_REQ:
 				InetAddress temp = node.getPredecessor();
-				if(temp == null) 
-					node.createJSON(Command.PRED_RES, originalSender, originalSender, null);
-				else
+				try {
 					node.createJSON(Command.PRED_RES, originalSender, originalSender, temp.getHostAddress());
+				} catch(NullPointerException e) {
+					node.createJSON(Command.PRED_RES, originalSender, originalSender, null);
+				}
 				break;
 
 			case PRED_RES:
