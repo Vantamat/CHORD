@@ -14,7 +14,7 @@ public class Stabilizer extends TimerTask{
 	public void run() {
 		try {
 			node.stabilize();
-		} catch (InterruptedException | IOException | NoSuchAlgorithmException e) {
+		} catch (InterruptedException | NoSuchAlgorithmException | IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}

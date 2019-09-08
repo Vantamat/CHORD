@@ -3,6 +3,7 @@ package node;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 
 /**
  * Listener continua a stare in ascolto per richieste di connessione provenienti da altri nodi della rete,
@@ -20,17 +21,19 @@ public class Listener implements Runnable{
 		this.serverSocket = serverSocket;
 		this.node = node;
 	}
-	
+
 	@Override
 	public void run() {
 		try {
 			while(true) {
 				Socket socket = serverSocket.accept();
-				new Thread(new RequestsHandler(socket, node)).start();
+				new Thread(new RequestHandler(socket, node)).start();
 			}
-		} catch (IOException e) {
-			e.printStackTrace();
+		} catch (SocketException e) {
 			
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 	}
 

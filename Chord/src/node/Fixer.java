@@ -1,6 +1,5 @@
 package node;
 
-import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.TimerTask;
 
@@ -14,7 +13,7 @@ public class Fixer extends TimerTask{
 	public void run() {
 		try {
 			node.fixFingers();
-		} catch (IOException | NoSuchAlgorithmException e) {
+		} catch (NoSuchAlgorithmException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}

@@ -14,13 +14,13 @@ import org.json.JSONObject;
  * RequestHandler viene generata una volta ricevuta una richiesta di connessione da un nodo della rete. La classe si occupa
  * della gestione della richiesta di tale nodo.
  */
-public class RequestsHandler implements Runnable{
+public class RequestHandler implements Runnable{
 	private Socket socket;
 	private Node node;
 	/**
 	 * @param socket: la socket che dovr� essere utilizzata per comunicare con il nodo che ha richiesto la connessione
 	 */
-	public RequestsHandler(Socket socket, Node node) {
+	public RequestHandler(Socket socket, Node node) {
 		this.socket = socket;
 		this.node = node;
 	}
@@ -37,59 +37,70 @@ public class RequestsHandler implements Runnable{
 			JSONObject json = new JSONObject(j);
 			String originalSender = json.getString("original_sender");
 			String currentSender = json.getString("current_sender");
-			BigInteger senderID;
 			System.out.println(json.get("op_code") + " from " + currentSender + " to " + node.getNodeIP());
 
 			switch(Command.valueOf((String) json.get("op_code"))) {
 			case JOIN:
-				senderID = node.evaluateID(currentSender);
 				try {
-					node.createJSON(Command.SUCC_RES, originalSender, originalSender, node.findSuccessor(senderID, originalSender, null).getHostAddress());
+					node.createJSON(Command.SUCC_RES, originalSender, originalSender, node.findSuccessor(node.evaluateID(originalSender)).getHostAddress());
 				}catch(NullPointerException e) {
 					node.createJSON(Command.SUCC_REQ, originalSender, node.closestPrecedingNode(node.getNodeID()).getHostAddress(), null);
 				}
 				break;
 
 			case SUCC_REQ:
-				senderID = node.evaluateID(currentSender);
-				if(json.isNull("address"))
+				if(json.isNull("payload"))
 					//node.createJSON(Command.SUCC_RES, originalSender, originalSender, node.findSuccessor(senderID, originalSender, null).getHostAddress());
 					try {
-						node.createJSON(Command.SUCC_RES, originalSender, originalSender, node.findSuccessor(senderID, originalSender, null).getHostAddress());
-					}catch(NullPointerException e) {
-						node.createJSON(Command.SUCC_REQ, originalSender, node.closestPrecedingNode(node.getNodeID()).getHostAddress(), null);
+						node.createJSON(Command.SUCC_RES, originalSender, originalSender, node.findSuccessor(node.evaluateID(originalSender)).getHostAddress());
+					} catch(NullPointerException e) {
+						node.createJSON(Command.SUCC_REQ, originalSender, node.closestPrecedingNode(node.evaluateID(originalSender)).getHostAddress(), null);
 					}
-				else
+				else {
+					BigInteger entryKey = node.evaluateID(originalSender).add(BigInteger.valueOf((long) 2).pow(json.getInt("payload") - 1)).mod(node.getRingDimension());
 					try {
-						node.createJSON(Command.FIX_RES, originalSender, originalSender, node.findSuccessor(senderID, originalSender, json.getString("address")).getHostAddress());
+						node.createJSON(Command.FIX_RES, originalSender, originalSender, node.findSuccessor(entryKey).getHostAddress() + "@" + json.getInt("payload"));
 					} catch (NullPointerException e) {
-						node.createJSON(Command.SUCC_REQ, originalSender, node.closestPrecedingNode(node.getNodeID()).getHostAddress(), json.getString("address"));
+						node.createJSON(Command.SUCC_REQ, originalSender, node.closestPrecedingNode(entryKey).getHostAddress(), json.getString("payload"));
 					}
+				}
 				break;
 
 			case SUCC_RES:
-				node.setSuccessor(InetAddress.getByName(json.getString("address")));
+				node.setSuccessor(InetAddress.getByName(json.getString("payload")));
+				synchronized(node) {
+					node.notifyAll();
+				}
+				break;
+				
+			case SS_REQ:
+				node.createJSON(Command.SS_RES, originalSender, originalSender, node.getSuccessor().getHostAddress());
+				break;
+				
+			case SS_RES:
+				node.setSuccSucc(InetAddress.getByName(json.getString("payload")));
 				synchronized(node) {
 					node.notifyAll();
 				}
 				break;
 				
 			case FIX_RES:
-				node.setFinger(InetAddress.getByName(json.getString("address")));
+				node.setFinger(json.getString("payload"));
 				break;
 				
 			case PRED_REQ:
-				InetAddress temp = node.getPredecessor();
 				try {
-					node.createJSON(Command.PRED_RES, originalSender, originalSender, temp.getHostAddress());
+					node.createJSON(Command.PRED_RES, originalSender, originalSender, node.getPredecessor().getHostAddress());
 				} catch(NullPointerException e) {
 					node.createJSON(Command.PRED_RES, originalSender, originalSender, null);
 				}
 				break;
 
 			case PRED_RES:
-				if (!json.isNull("address"))
-					node.setSuccPred(InetAddress.getByName(json.get("address").toString()));
+				if(!json.isNull("payload"))
+					node.setSuccPred(InetAddress.getByName(json.get("payload").toString()));
+				else if(node.getSuccessor() == InetAddress.getByName(node.getNodeIP()))
+					node.setPredecessor(InetAddress.getByName(node.getNodeIP()));
 
 				synchronized(node) {
 					node.notifyAll();
