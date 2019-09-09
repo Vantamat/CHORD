@@ -17,12 +17,14 @@ import org.json.JSONObject;
 public class RequestHandler implements Runnable{
 	private Socket socket;
 	private Node node;
+	private Object lookupSync;
 	/**
 	 * @param socket: la socket che dovr� essere utilizzata per comunicare con il nodo che ha richiesto la connessione
 	 */
-	public RequestHandler(Socket socket, Node node) {
+	public RequestHandler(Socket socket, Node node, Object lookupSync) {
 		this.socket = socket;
 		this.node = node;
+		this.lookupSync = lookupSync;
 	}
 
 	/**
@@ -99,7 +101,7 @@ public class RequestHandler implements Runnable{
 			case PRED_RES:
 				if(!json.isNull("payload"))
 					node.setSuccPred(InetAddress.getByName(json.get("payload").toString()));
-				else if(node.getSuccessor() == InetAddress.getByName(node.getNodeIP()))
+				else if(node.getSuccessor().equals(InetAddress.getByName(node.getNodeIP())))
 					node.setPredecessor(InetAddress.getByName(node.getNodeIP()));
 
 				synchronized(node) {
@@ -107,7 +109,24 @@ public class RequestHandler implements Runnable{
 				}
 				
 				break;
-
+				
+			case LOOKUP_REQ:
+				try {
+					node.createJSON(Command.LOOKUP_RES, originalSender, originalSender, node.findSuccessor(node.evaluateID(originalSender)).getHostAddress());
+				} catch(NullPointerException e) {
+					node.createJSON(Command.LOOKUP_REQ, originalSender, node.closestPrecedingNode(node.evaluateID(originalSender)).getHostAddress(), null);
+				}
+				break;	
+			
+			case LOOKUP_RES:
+				node.setLookupResponse(InetAddress.getByName(node.getNodeIP()));
+				
+				synchronized(lookupSync) {
+					lookupSync.notifyAll();
+				}
+				
+				break;
+				
 			case NOTIFY:
 				node.notify(InetAddress.getByName(originalSender));
 				break;

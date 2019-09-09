@@ -37,6 +37,9 @@ public class Node {
 
 	private InetAddress succPred;
 	private InetAddress succSucc;
+	
+	private InetAddress lookupResponse;
+	private Object lookupSync;
 
 	private int next;
 	private LinkedHashMap<BigInteger, InetAddress> fingerTable;
@@ -57,6 +60,8 @@ public class Node {
 
 		succPred = null;
 		succSucc = null;
+		
+		lookupSync = new Object();
 		
 		next = 0;
 		fingerTable = new LinkedHashMap<BigInteger, InetAddress>();
@@ -86,7 +91,7 @@ public class Node {
 		else if(node.compareTo(nodeID) == 1 && node.compareTo(evaluateID(successor.getHostAddress())) != 1)
 			return successor;
 		else {
-				return null;
+			return null;
 		}
 	}
 
@@ -101,11 +106,13 @@ public class Node {
 		BigInteger entryKey;
 		for(int i = m; i > 0; i--) {
 			entryKey = nodeID.add(BigInteger.valueOf((long) 2).pow(i-1)).mod(ringDimension);
-				//myID > nodeID && (fingerID[i] > myID || fingerID[i] < nodeID)
+			
+			//myID > nodeID && (fingerID[i] > myID || fingerID[i] < nodeID)
 			if(nodeID.compareTo(node) == 1
 				&& (evaluateID(fingerTable.get(entryKey).getHostAddress()).compareTo(nodeID) == 1
 						|| evaluateID(fingerTable.get(entryKey).getHostAddress()).compareTo(node) == -1)) 
 					return fingerTable.get(entryKey);
+			
 			//fingerID[i] > myID && fingerID[i] < nodeID
 			else if(evaluateID(fingerTable.get(entryKey).getHostAddress()).compareTo(nodeID) == 1
 					&& evaluateID(fingerTable.get(entryKey).getHostAddress()).compareTo(node) == -1)
@@ -123,7 +130,8 @@ public class Node {
 	 * @throws IOException
 	 */
 	public void createJSON(Command command, String originalSender, String receiver, String payload) throws IOException {
-		Socket socket = new Socket(receiver, 6007);
+		Socket socket = new Socket();
+		socket.connect(new InetSocketAddress(receiver, 6007), 1000);
 		PrintStream out = new PrintStream(socket.getOutputStream());
 		JSONObject json = new JSONObject();
 		json.put("op_code", command);
@@ -148,7 +156,7 @@ public class Node {
 			
 			serverSocket = new ServerSocket();
 			serverSocket.bind(new InetSocketAddress(address, 6007));
-			listener = new Thread(new Listener(serverSocket, this));
+			listener = new Thread(new Listener(serverSocket, this, lookupSync));
 			listener.start();
 		
 			Timer timer = new Timer();
@@ -158,7 +166,7 @@ public class Node {
 			timer.schedule(checker, 0, 5000);
 			fixer = new Fixer(this);
 			timer.schedule(fixer, 0, 100);
-			System.out.println("Created");
+			//System.out.println("Created");
 			return true;
 		} catch(IOException e) {
 			return false;
@@ -178,7 +186,7 @@ public class Node {
 			
 			serverSocket = new ServerSocket();
 			serverSocket.bind(new InetSocketAddress(this.address, 6007));
-			listener = new Thread(new Listener(serverSocket, this));
+			listener = new Thread(new Listener(serverSocket, this, lookupSync));
 			listener.start();
 			
 			createJSON(Command.JOIN, this.nodeIP, address.getHostAddress(), null);
@@ -255,7 +263,7 @@ public class Node {
 		//printNodeInformation();
 			createJSON(Command.NOTIFY, nodeIP, successor.getHostAddress(), null);
 		} catch(IOException e) {
-			System.out.println(successor.getHostAddress());
+			//System.out.println(successor.getHostAddress());
 			if(successor == succSucc)
 				leave();
 			else
@@ -312,9 +320,6 @@ public class Node {
 		//System.out.println("FIX FINGERS");
 		//printNodeInformation();
 	}
-	
-	public void successorFixer() {
-	}
 
 	/**
 	 * 
@@ -327,8 +332,7 @@ public class Node {
 			} catch(IOException | NullPointerException e) {
 				predecessor = null;
 			}
-		System.out.println("CHECK PREDECESSOR");
-		printNodeInformation();
+		//System.out.println("CHECK PREDECESSOR");
 	}
 
 	/**
@@ -345,11 +349,11 @@ public class Node {
 
 	/**
 	 * 
-	 * @param pittu
+	 * @param payload
 	 * @throws UnknownHostException
 	 */
-	public synchronized void setFinger(String pittu) throws UnknownHostException {
-		String[] elem = pittu.split("@");
+	public void setFinger(String payload) throws UnknownHostException {
+		String[] elem = payload.split("@");
 		InetAddress entryValue = InetAddress.getByName(elem[0]);
 		int next = Integer.valueOf(elem[1]);
 		BigInteger entryKey = nodeID.add(BigInteger.valueOf((long) 2).pow(next - 1)).mod(ringDimension);
@@ -360,7 +364,7 @@ public class Node {
 	 * 
 	 * @throws NoSuchAlgorithmException
 	 */
-	private synchronized void printNodeInformation() throws NoSuchAlgorithmException {
+	public void printNodeInformation() throws NoSuchAlgorithmException {
 		System.out.println("NodeIP:\t" + nodeIP + "\nm:\t" + m + "\nNodeID:\t" + nodeID + "\n" + digest.toString());
 		if(successor != null)
 			System.out.println("SuccessorID:\t\t" + evaluateID(successor.getHostAddress()));
@@ -378,13 +382,37 @@ public class Node {
 			System.out.println("SuccPredecessorID:\t" + evaluateID(succPred.getHostAddress()));
 		else
 			System.out.println("SuccPredecessorID:\tnull");
-		System.out.println("________________________________________________________________________");
+		/*System.out.println("________________________________________________________________________");
 		for (BigInteger key: fingerTable.keySet())
-				System.out.format("%49s%32s\n", key, fingerTable.get(key));
+				System.out.format("%49s%32s\n", key, fingerTable.get(key));*/
 		System.out.println("________________________________________________________________________");
 
 	}
-
+	
+	/**
+	 * 
+	 * @param key
+	 * @return
+	 * @throws NoSuchAlgorithmException
+	 * @throws InterruptedException
+	 * @throws IOException
+	 */
+	public InetAddress lookup(String key) throws NoSuchAlgorithmException, InterruptedException, IOException {
+		BigInteger id = evaluateID(key);
+		
+		try {
+			createJSON(Command.LOOKUP_REQ, nodeIP, findSuccessor(id).getHostAddress(), null);
+		}catch(NullPointerException e) {
+			createJSON(Command.LOOKUP_REQ, nodeIP, closestPrecedingNode(id).getHostAddress(), null);
+		}
+		
+		synchronized(lookupSync) {
+			lookupSync.wait();
+		}
+		
+		return lookupResponse;
+	}
+	
 	public String getNodeIP() {
 		return nodeIP;
 	}
@@ -428,9 +456,13 @@ public class Node {
 	public void setSuccSucc(InetAddress succSucc) {
 		this.succSucc = succSucc;
 	}
+	
+	public void setLookupResponse(InetAddress response) {
+		this.lookupResponse = response;
+	}
 
 	public static void main (String[] args) throws NoSuchAlgorithmException, IOException, InterruptedException {
-		Node n1 = new Node();
+		Node n1;
 		boolean t = false;
 		int choice;
 		Scanner stdin = new Scanner(System.in);
@@ -439,13 +471,19 @@ public class Node {
 			choice = Integer.valueOf(stdin.nextLine());
 			switch(choice) {
 			case 1:
+				n1 = new Node();
+				System.out.println("caso 1");
 				t = n1.create();
 				break;
 			case 2:
+				n1 = new Node();
 				System.out.println("IP to join: ");
 				t = n1.join(InetAddress.getByName(stdin.nextLine()));
 				break;
 			}
+			choice = Integer.valueOf(stdin.nextLine());
+			System.out.println(choice);
+			stdin.reset();
 		}
 		stdin.close();
 	}

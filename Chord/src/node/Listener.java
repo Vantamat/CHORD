@@ -12,14 +12,16 @@ import java.net.SocketException;
 public class Listener implements Runnable{
 	private ServerSocket serverSocket;
 	private Node node;
+	private Object lookupSync;
 	
 	
 	/**
 	 * @param serverSocket: la serverSocket che sarà utilizzata per essere contattati da altri nodi
 	 */
-	public Listener(ServerSocket serverSocket, Node node) {
+	public Listener(ServerSocket serverSocket, Node node, Object lookupSync) {
 		this.serverSocket = serverSocket;
 		this.node = node;
+		this.lookupSync = lookupSync;
 	}
 
 	@Override
@@ -27,7 +29,7 @@ public class Listener implements Runnable{
 		try {
 			while(true) {
 				Socket socket = serverSocket.accept();
-				new Thread(new RequestHandler(socket, node)).start();
+				new Thread(new RequestHandler(socket, node, lookupSync)).start();
 			}
 		} catch (SocketException e) {
 			

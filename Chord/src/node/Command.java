@@ -9,6 +9,8 @@ public enum Command {
 	FIX_RES,
 	PRED_REQ,
 	PRED_RES,
+	LOOKUP_REQ,
+	LOOKUP_RES,
 	CHECK,
 	NOTIFY
 }
