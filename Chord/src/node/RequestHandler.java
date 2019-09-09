@@ -38,8 +38,6 @@ public class RequestHandler implements Runnable{
 			String j = in.nextLine();
 			JSONObject json = new JSONObject(j);
 			String originalSender = json.getString("original_sender");
-			String currentSender = json.getString("current_sender");
-			System.out.println(json.get("op_code") + " from " + currentSender + " to " + node.getNodeIP());
 
 			switch(Command.valueOf((String) json.get("op_code"))) {
 			case JOIN:

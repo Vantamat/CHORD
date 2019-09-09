@@ -136,7 +136,6 @@ public class Node {
 		JSONObject json = new JSONObject();
 		json.put("op_code", command);
 		json.put("original_sender", originalSender);
-		json.put("current_sender", this.nodeIP);
 		json.put("payload", payload);
 		try {
 			out.println(json.toString());
