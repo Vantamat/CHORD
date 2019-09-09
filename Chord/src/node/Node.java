@@ -398,13 +398,15 @@ public class Node {
 	 */
 	public InetAddress lookup(String key) throws NoSuchAlgorithmException, InterruptedException, IOException {
 		BigInteger id = evaluateID(key);
-		
-		try {
-			createJSON(Command.LOOKUP_REQ, nodeIP, findSuccessor(id).getHostAddress(), null);
-		}catch(NullPointerException e) {
-			createJSON(Command.LOOKUP_REQ, nodeIP, closestPrecedingNode(id).getHostAddress(), null);
+		if(findSuccessor(id) != null) {
+			//System.out.println("Inoltro " + id.toString() + " a me");
+			return findSuccessor(id);
 		}
-		
+		else {
+			System.out.println("Passo id = " + id.toString());
+			createJSON(Command.LOOKUP_REQ, nodeIP, closestPrecedingNode(id).getHostAddress(), id.toString());
+
+		}
 		synchronized(lookupSync) {
 			lookupSync.wait();
 		}
