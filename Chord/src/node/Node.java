@@ -383,9 +383,15 @@ public class Node {
 			System.out.println("SuccPredecessorID:\tnull");
 		/*System.out.println("________________________________________________________________________");
 		for (BigInteger key: fingerTable.keySet())
-				System.out.format("%49s%32s\n", key, fingerTable.get(key));*/
-		System.out.println("________________________________________________________________________");
-
+				System.out.format("%49s%32s\n", key, fingerTable.get(key));
+		System.out.println("__________________________________________________________________________");
+		*/
+	}
+	
+	public void printFingerTable() throws NoSuchAlgorithmException {
+		System.out.println("_________________________________________________________________________________\n");
+		for (BigInteger key: fingerTable.keySet())
+			System.out.format("%49s%32s\n", key, fingerTable.get(key));
 	}
 	
 	/**
@@ -398,15 +404,11 @@ public class Node {
 	 */
 	public InetAddress lookup(String key) throws NoSuchAlgorithmException, InterruptedException, IOException {
 		BigInteger id = evaluateID(key);
-		if(findSuccessor(id) != null) {
-			//System.out.println("Inoltro " + id.toString() + " a me");
+		if(findSuccessor(id) != null)
 			return findSuccessor(id);
-		}
-		else {
-			System.out.println("Passo id = " + id.toString());
+		else
 			createJSON(Command.LOOKUP_REQ, nodeIP, closestPrecedingNode(id).getHostAddress(), id.toString());
 
-		}
 		synchronized(lookupSync) {
 			lookupSync.wait();
 		}

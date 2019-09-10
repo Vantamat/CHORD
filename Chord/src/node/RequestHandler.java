@@ -110,10 +110,8 @@ public class RequestHandler implements Runnable{
 				
 			case LOOKUP_REQ:
 				try {
-					System.out.println("Rispondo");
 					node.createJSON(Command.LOOKUP_RES, originalSender, originalSender, node.findSuccessor(json.getBigInteger("payload")).getHostAddress());
 				} catch(NullPointerException e) {
-					System.out.println("Inoltro " + json.getString("payload"));
 					node.createJSON(Command.LOOKUP_REQ, originalSender, node.closestPrecedingNode(json.getBigInteger("payload")).getHostAddress(), json.getString("payload"));
 				}
 				break;	
