@@ -44,6 +44,12 @@ Digit an option:
 4. LEAVE the ring
 ```
 
+If you digit `3`, a new line will appear asking for the key to search for:
+
+```
+Insert a key:
+```
+
 ## Requirements
 * [Java Runtime Environment](https://www.java.com/it/download/) - Necessary to execute the application.
 
