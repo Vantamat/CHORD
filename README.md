@@ -49,4 +49,4 @@ Digit an option:
 
 ## Original work
 This project is based on the original CHORD paper:
-* ["Chord: A scalable peer-to-peer lookup service for internet applications", August 2001] (https://dl.acm.org/doi/pdf/10.1145/383059.383071)
+* ["Chord: A scalable peer-to-peer lookup service for internet applications", August 2001](https://dl.acm.org/doi/pdf/10.1145/383059.383071)
