@@ -1,7 +1,7 @@
 # CHORD P2P protocol
 
 This is an implementation of the CHORD P2P protocol, as it is discussed in the original paper.
-The project part of the Distributed Systems course of Politecnico di Milano, a.y. 2018-2019.
+The project is part of the Distributed Systems course of Politecnico di Milano, a.y. 2018-2019.
 
 ## Getting Started
 
@@ -17,7 +17,7 @@ java -jar Chord_app.jar
 
 ### Create or join a ring
 
-After the program the application launch, the following menu will appear:
+After the application launch, the following menu will appear:
 
 ```
 Digit an option:
